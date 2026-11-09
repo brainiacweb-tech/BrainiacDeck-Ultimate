@@ -1,0 +1,6 @@
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<PropertyGroup><Configuration Condition="'$(Configuration)'==''">Release</Configuration><Platform Condition="'$(Platform)'==''">x64</Platform><ProjectGuid>{F97EC888-2C90-45E9-BB31-52967BFB0A31}</ProjectGuid><TargetPlatformVersion>10.0.26100.0</TargetPlatformVersion><TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion><AppxPackageSigningEnabled>false</AppxPackageSigningEnabled><EntryPointProjectUniqueName>..\BrainiacDesk.App\BrainiacDesk.App.csproj</EntryPointProjectUniqueName></PropertyGroup>
+<Import Project="$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.props" />
+<ItemGroup><AppxManifest Include="Package.appxmanifest" /><Content Include="Assets\*.png" /><ProjectReference Include="..\BrainiacDesk.App\BrainiacDesk.App.csproj" /></ItemGroup>
+<Import Project="$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\Microsoft.DesktopBridge.targets" />
+</Project>

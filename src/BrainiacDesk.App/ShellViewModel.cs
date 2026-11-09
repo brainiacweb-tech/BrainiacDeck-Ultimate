@@ -20,7 +20,7 @@ public partial class ShellViewModel(ISettingsStore store, ILogger<ShellViewModel
     [ObservableProperty] private bool isDark = true;
     [ObservableProperty] private bool minimizeToTray = true;
     [ObservableProperty] private bool confirmExit = true;
-    public string DataLocation => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BrainiacDesk");
+    public string DataLocation => LocalPaths.Data;
     public async Task InitializeAsync()
     {
         settings = await store.LoadAsync();

@@ -1,5 +1,7 @@
-name: Windows foundation checks
+name: Windows build and operation checks
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: windows-latest
@@ -11,3 +13,9 @@ jobs:
       - run: dotnet restore BrainiacDesk.slnx
       - run: dotnet build BrainiacDesk.slnx -c Release --no-restore
       - run: dotnet run --project tests/BrainiacDesk.Tests -c Release
+      - run: dotnet run --project tests/BrainiacDesk.WindowsTests -c Release
+      - run: dotnet publish src/BrainiacDesk.App -c Release -r win-x64 --self-contained true -o artifacts/portable
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BrainiacDesk-development-win-x64
+          path: artifacts/portable/

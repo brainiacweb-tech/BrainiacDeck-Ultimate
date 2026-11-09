@@ -1,4 +1,8 @@
 # Architecture
-App contains the WPF views, CommunityToolkit MVVM view model, composition root with dependency injection and logging, and tray lifecycle. Core defines settings contracts. Infrastructure implements parameterized SQLite persistence with serialized writes. Tests is an executable integration harness that exits nonzero on failure.
+BrainiacDesk.Core contains preference contracts, local profile paths, streaming file operations, safe archive extraction, rename planning/rollback and workflow authorization/execution. Infrastructure provides serialized, parameterized SQLite settings. App provides the WPF shell with CommunityToolkit MVVM, DI/logging composition, native tray/hotkey/clipboard integration, modular tool windows, codec/PDF operations and action routing.
 
-Future utility modules must be added only when operations work end-to-end. No empty module projects are included. The shell uses dynamic theme resources and native window chrome. System fonts avoid font distribution licensing issues. The current tray icon is a Windows system placeholder, not a final brand asset.
+Utility windows coordinate controls through code behind; converting those coordinators to view models remains architectural work. Engines use cancellable background work for expensive operations; Windows imaging render operations run on an STA worker. No arbitrary command evaluation is supported. File outputs preserve existing files except explicitly confirmed Save dialogs.
+
+Settings use %LOCALAPPDATA%\BrainiacDesk. BRAINIACDESK_DATA overrides the profile location for isolated smoke tests. JSON configurations use replace-on-save. SQLite access is serialized within each service. No secrets belong in settings. Clipboard payloads stay in memory. Activity is bounded to 200 non-content events.
+
+Tool windows cannot close while their button operation is active; cancellable jobs expose a stop control. Completed outputs are retained after cancellation. Workflow failures keep partial output and a run log. Rename rollback is attempted and reports rollback failures rather than claiming atomicity.

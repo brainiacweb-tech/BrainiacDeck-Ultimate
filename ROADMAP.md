@@ -1,8 +1,2 @@
 # Roadmap
-1. Finish foundation acceptance: custom icons, splash, theme/system preferences, keyboard accessibility, DPI/multi-monitor and tray lifecycle verification.
-2. Implement and verify converter, consent-based Clipboard Shelf, teleprompter.
-3. Command center, shared action routing, shortcuts.
-4. Safe automation, file toolkit, workspaces.
-5. Capture, annotations, advanced privacy.
-6. Profiling, security/license audit, MSIX, certification checks and Store materials.
-No milestone is complete merely because its screens exist.
+Complete the explicit gaps in docs/READINESS.md before declaring milestones accepted. Priorities: real clipboard/tray/hotkey/teleprompter/capture tests; cancellation and large-input soak tests; full utility MVVM refactor; advanced approved workflow triggers/actions; supported-codec expansion only after licensing checks; accessibility, DPI/multi-monitor and profiling; full security/license audit; signed MSIX install/upgrade/uninstall and WACK; accurate Store submission assets.

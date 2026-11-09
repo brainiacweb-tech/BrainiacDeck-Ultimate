@@ -1,3 +1,6 @@
 # Changelog
+## 0.2.0 — 2026-11-09
+Working development slices across conversion/PDF, consent-based memory clipboard, teleprompter, commands/shortcuts, file tools, manual workflows, workspaces, screenshot annotations, privacy/activity and diagnostics. Added original icons, initialization splash, expanded executable tests, isolated Windows UI smoke tests, self-contained publishing and MSIX packaging sources. Full original-spec acceptance and Store readiness remain incomplete.
+
 ## 0.1.0 — 2026-11-09
-Initial WPF foundation: onboarding, dashboard, local preferences, light/dark appearance, tray integration, help/about. SQLite integration harness and Windows CI added. Development build only.
+Initial WPF foundation, SQLite preferences, onboarding, dashboard, themes and tray controls.

@@ -1,6 +1,9 @@
-# Testing
-Run `dotnet run --project tests/BrainiacDesk.Tests -c Release`. This is a dependency-light executable integration harness, not a VSTest project; `dotnet test` does not execute these checks.
+# Verification
+Run both executable integration harnesses (not VSTest projects):
 
-On an interactive Windows desktop run `pwsh -File scripts/ui-smoke.ps1` after a Release build. It launches its own process, saves default preferences to the normal development app profile, exercises navigation, and terminates only that process. Do not run against a profile containing important preferences. It does not test graceful exit or tray disposal.
+    dotnet run --project tests/BrainiacDesk.Tests -c Release
+    dotnet run --project tests/BrainiacDesk.WindowsTests -c Release
 
-See docs/QA-RESULTS.md and docs/READINESS.md for evidence and pending manual checks.
+Then run `pwsh -File scripts/ui-smoke.ps1` on an interactive Windows desktop. It uses a unique temporary profile, verifies first-run setup, navigates the shell, opens/closes all tools, checks clipboard consent defaults, and verifies preferences across graceful exit/restart. Temporary profiles are retained for inspection. Normal profile preferences and clipboard contents are not modified by this smoke test.
+
+`dotnet test` does not execute these harnesses. UI tests do not prove every control, hotkey, tray interaction or real capture path. See docs/QA-RESULTS.md and docs/READINESS.md for exact scope and pending manual tests.
