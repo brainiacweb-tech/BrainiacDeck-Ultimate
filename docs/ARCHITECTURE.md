@@ -1,0 +1,4 @@
+# Architecture
+App contains the WPF views, CommunityToolkit MVVM view model, composition root with dependency injection and logging, and tray lifecycle. Core defines settings contracts. Infrastructure implements parameterized SQLite persistence with serialized writes. Tests is an executable integration harness that exits nonzero on failure.
+
+Future utility modules must be added only when operations work end-to-end. No empty module projects are included. The shell uses dynamic theme resources and native window chrome. System fonts avoid font distribution licensing issues. The current tray icon is a Windows system placeholder, not a final brand asset.

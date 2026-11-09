@@ -1,0 +1,2 @@
+# Privacy
+This development build stores appearance, window behavior, and onboarding completion in a local SQLite database under %LOCALAPPDATA%\BrainiacDesk. It does not monitor the clipboard, collect analytics, upload files, require an account, or run automations. SQLite settings are not encrypted and must never contain secrets. Closing the application stops its process. No startup integration is registered.

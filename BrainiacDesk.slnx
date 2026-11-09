@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BrainiacDesk.App/BrainiacDesk.App.csproj" />
+    <Project Path="src/BrainiacDesk.Core/BrainiacDesk.Core.csproj" />
+    <Project Path="src/BrainiacDesk.Infrastructure/BrainiacDesk.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BrainiacDesk.Tests/BrainiacDesk.Tests.csproj" />
+  </Folder>
+</Solution>

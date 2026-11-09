@@ -1,0 +1,2 @@
+# Contributing
+Build on Windows with .NET 10. Run the executable integration tests and UI smoke script before submitting changes. Keep utilities behind Core contracts, provide actual operation and failure tests, and never label a planned feature as available. Avoid secrets, private files, and generated binaries in commits.

@@ -1,0 +1,2 @@
+# Security
+Normal operation requests no administrator elevation. SQL values are parameterized. This build processes no archives, shell commands, clipboard data, or conversions. Report vulnerabilities privately to the repository owner; a public support/security contact must be established before release. Never commit certificates or credentials.
