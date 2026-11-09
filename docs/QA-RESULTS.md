@@ -30,3 +30,6 @@ Windows: five image outputs with resize, output protection, corrupt input, unsup
 - Closing active tool operations is now blocked until they finish or are cancelled, preventing ordinary window-close interruption of file work.
 
 No performance numbers, Store approval, WACK success, full security review or completion of every original feature is claimed. See READINESS.md for the remaining specification gaps.
+
+## Interface redesign verification
+Rendered and inspected actual dark/light dashboard and converter previews. Corrected clipped text fields and dark-theme text inheritance. Release build passed with zero warnings/errors. Republished the final self-contained executable and passed the full isolated-profile UI smoke check, including all ten tool windows, converter dropdown expansion/collapse, saved settings across process restart and graceful exit. New styling does not imply a completed accessibility or multi-DPI audit.

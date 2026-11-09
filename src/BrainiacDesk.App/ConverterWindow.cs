@@ -48,7 +48,36 @@ public sealed class ConverterWindow : ToolWindow
         Action("Extract / reorder PDF pages", async () => { var paths = PickFiles("PDF|*.pdf"); if (paths.Length == 0) return; var output = SaveFile("PDF|*.pdf", ".pdf"); if (output is null) return; var selection = pages.Text; await Task.Run(() => PdfPages.Extract(paths[0], output, selection, CancellationToken.None)); Status.Text = "PDF pages exported."; });
         Action("Split PDF to individual pages", async () => { var paths = PickFiles("PDF|*.pdf"); if (paths.Length == 0) return; var output = PickFolder(); if (output is null) return; await Task.Run(() => { using var document = PdfSharp.Pdf.IO.PdfReader.Open(paths[0], PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import); for (int i = 1; i <= document.PageCount; i++) PdfPages.Extract(paths[0], ConversionEngine.UniquePath(output, "Page-" + i.ToString("D4"), ".pdf"), i.ToString(), CancellationToken.None); }); Status.Text = "Split pages exported; existing files preserved."; });
         Action("View PDF metadata", async () => { var paths = PickFiles("PDF|*.pdf"); if (paths.Length > 0) Status.Text = await Task.Run(() => PdfPages.Metadata(paths[0])); });
+        DesignLayout(previewImage, pages);
         Closing += (_, e) => { if (cancellation is not null) { cancellation.Cancel(); e.Cancel = true; Status.Text = "Cancelling. Close again after the current operation stops."; } };
+    }
+    private void DesignLayout(System.Windows.Controls.Image preview, TextBox pages)
+    {
+        Width = 1180; Height = 900; MinWidth = 1040;
+        var buttons = Body.Children.OfType<Button>().ToDictionary(button => (string)button.Content);
+        var introduction = Body.Children.OfType<TextBlock>().First();
+        Body.Children.Clear();
+        StackPanel Card(Panel parent, string title)
+        {
+            var panel = new StackPanel(); var border = new Border { Child = panel, Style = (Style)FindResource("Card"), Padding = new Thickness(16), Margin = new Thickness(0, 0, 0, 16) }; parent.Children.Add(border);
+            panel.Children.Add(new TextBlock { Text = title, FontSize = 17, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 12) }); return panel;
+        }
+        void Label(Panel parent, string title) { var label = new TextBlock { Text = title, FontSize = 12, Margin = new Thickness(0, 8, 0, 6) }; label.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); parent.Children.Add(label); }
+        void Actions(Panel parent, params string[] names) { var row = new WrapPanel { Margin = new Thickness(0, 10, 0, 0) }; foreach (var name in names) row.Children.Add(buttons[name]); parent.Children.Add(row); }
+        introduction.Margin = new Thickness(0, 0, 0, 20); introduction.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); Body.Children.Add(introduction);
+        var columns = new Grid(); columns.ColumnDefinitions.Add(new ColumnDefinition()); columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(330) }); Body.Children.Add(columns);
+        var left = new StackPanel { Margin = new Thickness(0, 0, 20, 0) }; var right = new StackPanel(); Grid.SetColumn(right, 1); columns.Children.Add(left); columns.Children.Add(right);
+        var queue = Card(left, "01  Add your files");
+        var drop = new Border { BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(14), Margin = new Thickness(0, 0, 0, 14) }; drop.SetResourceReference(Border.BorderBrushProperty, "Accent");
+        var dropText = new StackPanel(); dropText.Children.Add(new TextBlock { Text = "Drop files here", FontSize = 19, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center }); var detail = new TextBlock { Text = "Images, PDFs, TXT or Markdown", FontSize = 12, Margin = new Thickness(0, 8, 0, 0), HorizontalAlignment = HorizontalAlignment.Center }; detail.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); dropText.Children.Add(detail); drop.Child = dropText; queue.Children.Add(drop);
+        list.Height = 130; queue.Children.Add(list); Actions(queue, "Add files", "Remove selected");
+
+        var options = Card(right, "02  Choose your output"); Label(options, "Output format"); options.Children.Add(format); Label(options, "JPEG quality"); options.Children.Add(quality); Label(options, "Maximum width · px (0 = original)"); options.Children.Add(width); Label(options, "Destination folder"); folder.TextWrapping = TextWrapping.NoWrap; folder.ToolTip = folder.Text; options.Children.Add(folder); Actions(options, "Choose output folder");
+        var presetControls = new StackPanel(); Actions(presetControls, "Optimize for email", "Save conversion preset", "Load conversion preset"); options.Children.Add(new Expander { Header = "Presets", Content = presetControls });
+        buttons["Convert queue"].Style = (Style)FindResource("Primary"); buttons["Convert queue"].Content = "Convert queue"; Actions(options, "Convert queue", "Cancel queue");
+        var resultCard = Card(left, "Conversion results"); results.Height = 90; resultCard.Children.Add(results); left.Children.Add(new Expander { Header = "Image preview", Content = preview });
+        var pdf = new StackPanel { Margin = new Thickness(0, 16, 0, 0) }; Label(pdf, "Page selection · for example 1,3–5,2"); pdf.Children.Add(pages); Actions(pdf, "Extract / reorder PDF pages", "Split PDF to individual pages", "View PDF metadata");
+        Body.Children.Add(new Expander { Header = "More PDF tools", Content = pdf, Padding = new Thickness(8), Margin = new Thickness(0, 0, 0, 8) });
     }
     private void RefreshFormats()
     {

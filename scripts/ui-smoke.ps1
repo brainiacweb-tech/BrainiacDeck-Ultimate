@@ -51,6 +51,14 @@ try {
             $consent=$tool.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,'Enable clipboard monitoring for this session (explicit consent)'))
             if(!$consent -or $consent.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -ne [System.Windows.Automation.ToggleState]::Off) { throw 'Clipboard monitoring was not disabled by default.' }
         }
+        if($button -eq 'File Converter') {
+            $combo=$tool.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty,[System.Windows.Automation.ControlType]::ComboBox))
+            if(!$combo) { throw 'Converter output selector is missing.' }
+            $expand=$combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+            $expand.Expand()
+            if($expand.Current.ExpandCollapseState -ne [System.Windows.Automation.ExpandCollapseState]::Expanded) { throw 'Styled format selector did not expand.' }
+            $expand.Collapse()
+        }
         $tool.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
         Write-Output "PASS: $button opens and closes."
     }

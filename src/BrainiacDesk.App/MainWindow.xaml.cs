@@ -22,7 +22,7 @@ public partial class MainWindow : Window
     }
     private static System.Drawing.Icon LoadTrayIcon()
     {
-        using var stream = Application.GetResourceStream(new Uri("pack://application:,,,/Brand/BrainiacDesk.ico"))!.Stream;
+        using var stream = Application.GetResourceStream(new Uri("pack://application:,,,/BrainiacDesk.App;component/Brand/BrainiacDesk.ico"))!.Stream;
         using var icon = new System.Drawing.Icon(stream); return (System.Drawing.Icon)icon.Clone();
     }
     private ActionRouter? router;

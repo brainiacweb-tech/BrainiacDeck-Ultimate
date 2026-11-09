@@ -5,8 +5,9 @@ using System.Windows.Media.Imaging;
 using PdfSharp.Pdf.IO;
 internal static class Program
 {
-    [STAThread] private static void Main()
+    [STAThread] private static void Main(string[] args)
     {
+        if (args.Contains("--visual-review")) { VisualReview.Run(); return; }
         var folder = Path.Combine(Path.GetTempPath(), "BrainiacDeskConversionTests", Guid.NewGuid().ToString("N")); Directory.CreateDirectory(folder);
         int count = 0;
         void Check(bool condition, string name) { if (!condition) throw new Exception("FAIL: " + name); count++; Console.WriteLine("PASS: " + name); }

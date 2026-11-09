@@ -4,3 +4,5 @@ Working development slices across conversion/PDF, consent-based memory clipboard
 
 ## 0.1.0 — 2026-11-09
 Initial WPF foundation, SQLite preferences, onboarding, dashboard, themes and tray controls.
+### Interface redesign
+Grouped navigation, actionable dashboard cards, two-column converter, consistent dark/light controls, fixed tool status areas, compact action rows, and rendered visual-review previews.
