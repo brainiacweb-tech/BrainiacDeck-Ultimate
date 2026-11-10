@@ -30,7 +30,24 @@ internal static class VisualReview
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image)); using var stream = File.Create(Path.Combine(folder, name + ".png")); encoder.Save(stream); Console.WriteLine("Rendered: " + name);
         }
         Capture(main, "dashboard-dark");
+        using (new CaptureVisibilityScope())
+        {
+            if(app.Windows.Cast<Window>().Any(window => window.IsVisible)) throw new InvalidOperationException("App windows were not hidden for desktop capture.");
+            var bounds=CaptureImaging.Desktop; using var pixels=CaptureImaging.Grab(new System.Drawing.Rectangle(bounds.Left,bounds.Top,64,64),false);
+            if(pixels.Width != 64 || pixels.Height != 64) throw new InvalidOperationException("Desktop capture did not return the requested pixel area.");
+            Console.WriteLine("Verified live desktop capture and app-window hiding (pixels discarded, not saved).");
+        }
+        if(!main.IsVisible) throw new InvalidOperationException("Main window was not restored after capture.");
         var converter = new ConverterWindow { Owner = main }; converter.Show(); Capture(converter, "converter-dark"); converter.Close();
+        var capture = new CaptureWindow(new ActionRouter(main)) { Owner = main }; capture.Show(); Capture(capture,"capture-studio-dark");
+        System.Collections.Generic.IEnumerable<DependencyObject> Walk(DependencyObject root)
+        {
+            yield return root; for(int index=0;index<VisualTreeHelper.GetChildrenCount(root);index++) foreach(var child in Walk(VisualTreeHelper.GetChild(root,index))) yield return child;
+        }
+        var tabs = Walk(capture).OfType<System.Windows.Controls.TabControl>().First(); tabs.SelectedIndex = 1; Capture(capture,"recording-studio-dark"); capture.Close();
+        var fixture = Path.Combine(folder,"video-fixture.mp4"); if(File.Exists(fixture)) File.Delete(fixture);
+        using(var writer = new NativeVideoWriter(fixture,160,96,15)) { var pixels=Enumerable.Repeat((byte)180,160*96*4).ToArray(); for(int i=0;i<15;i++) writer.Append(pixels,i*TimeSpan.TicksPerSecond/15,TimeSpan.TicksPerSecond/15); writer.Complete(); }
+        var video = new VideoEditorWindow(fixture) { Owner = main }; video.Show(); var ready=System.Diagnostics.Stopwatch.StartNew(); while(!Walk(video).OfType<System.Windows.Controls.Canvas>().Any(node => node.Width == 160) && ready.Elapsed.TotalSeconds < 10) { video.Dispatcher.Invoke(() => {},System.Windows.Threading.DispatcherPriority.ApplicationIdle); System.Threading.Thread.Sleep(20); } Capture(video,"video-editor-dark"); video.Close();
         model.IsDark = false; model.SaveCommand.ExecuteAsync(null).GetAwaiter().GetResult(); Capture(main, "dashboard-light");
         main.Close();
     }

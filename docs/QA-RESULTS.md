@@ -39,3 +39,12 @@ Verified packed Raleway glyph faces for Normal, Medium, SemiBold and Bold; all r
 
 ## Window control visibility correction
 Reduced the main window minimum size, explicitly retained standard resizable Windows chrome, and constrained main/tool startup bounds to the usable primary screen area. Self-contained publish succeeded. The app was left closed at the user's request; visual confirmation of the title-bar controls remains pending.
+
+## Capture and recording studio — 2026-11-10
+Release solution build passed with 0 warnings and 0 errors. Core harness: 19 checks passed. Windows STA harness: 56 checks passed, including exact 720p/1080p/square/portrait image and native H.264 MP4 outputs, decoded orientation/colors/frame timing, trim/crop/zoom, existing-output protection, pre-start and active-encoding cancellation cleanup, and synthetic timed recording with pause/resume/stop. Native recordings use Windows Media Foundation; no external media executable is bundled.
+
+Resolved an actual HD decoder failure: Windows exposes 1920x1088 coded rows for some 1920x1080 clips. The reader now respects presentation apertures/padding and refreshed stride; every HD/social MP4 preset was then encoded and decoded successfully. This is not evidence of compatibility with every external codec.
+
+Rendered and inspected actual WPF screenshot, recording and video editor views using synthetic fixtures. Verified an actual 64x64 desktop capture while app windows were hidden and restored; captured pixels were discarded, never saved. Portable executable UI smoke passed: onboarding, four dashboard actions, all ten tools, screenshot/recording tab selection, converter selector, clipboard consent default, preference restart and graceful exit. The smoke test does not start a real screen recording. NuGet vulnerability audit reported no vulnerable packages from the configured source. Published Raleway/Lucide/Vortice notices are present.
+
+Remaining manual acceptance: live desktop recording over longer sessions, actual desktop region dragging across mixed-DPI/negative-origin monitors, foreground targeting, pointer positioning, recording toolbar exclusion on different Windows setups, protected-content behavior, accessibility, and real-world external video compatibility. Recording and edited MP4 exports contain no audio. No guaranteed frame-rate/performance or social-platform recompression result is claimed.

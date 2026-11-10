@@ -51,6 +51,7 @@ internal static class Program
             Check(pixels[0] == 0 && pixels[1] == 0 && pixels[2] == 0 && pixels[3] == 255, "Screenshot redaction exports opaque black pixels");
             foreach (var tool in new[] { "Arrow", "Rectangle", "Text", "Highlight" }) Check(CaptureWindow.Annotate(bitmap, tool, new System.Windows.Rect(0, 0, 3, 3), "A").PixelWidth == 4, "Annotation renders: " + tool);
             Check(ActionRouter.Score(ActionRouter.Catalog[0], "convert") > ActionRouter.Score(ActionRouter.Catalog[0], "zqx"), "Deterministic command matching");
+            CaptureStudioTests.Run(folder, Check, Fails);
             Console.WriteLine($"{count} Windows checks passed.");
         }
         finally { Directory.Delete(folder, true); }

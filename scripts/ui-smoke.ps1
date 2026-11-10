@@ -72,6 +72,18 @@ try {
             if($expand.Current.ExpandCollapseState -ne [System.Windows.Automation.ExpandCollapseState]::Expanded) { throw 'Styled format selector did not expand.' }
             $expand.Collapse()
         }
+        if($button -eq 'Screen Capture') {
+            foreach($tabName in @('Recording','Screenshots')) {
+                $tab=$tool.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$tabName))
+                if(!$tab) { throw "Missing capture tab: $tabName" }
+                $tab.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+                Start-Sleep -Milliseconds 150
+                $actionName=if($tabName -eq 'Recording') {'Start recording'} else {'Capture screenshot'}
+                $action=$tool.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$actionName))
+                if(!$action -or !$action.Current.IsEnabled) { throw "Missing capture action: $actionName" }
+            }
+            Write-Output 'PASS: Screenshot and recording tabs expose their actions without starting capture.'
+        }
         $tool.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
         Write-Output "PASS: $button opens and closes."
     }
