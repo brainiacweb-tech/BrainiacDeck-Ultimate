@@ -15,6 +15,8 @@ public class ToolWindow : Window
     {
         Title = title + " · BrainiacDesk"; Width = 980; Height = 800; MinWidth = 720; MinHeight = 560;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        WindowStyle = WindowStyle.SingleBorderWindow; ResizeMode = ResizeMode.CanResize;
+        SourceInitialized += (_, _) => WindowPlacement.FitToWorkArea(this);
         Icon = System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/BrainiacDesk.App;component/Brand/BrainiacDesk.ico"));
         var layout = new Grid(); layout.SetResourceReference(Grid.BackgroundProperty, "Background"); layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); layout.RowDefinitions.Add(new RowDefinition()); layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var header = new Grid { Margin = new Thickness(24, 18, 24, 18) };

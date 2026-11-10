@@ -36,3 +36,6 @@ Rendered and inspected actual dark/light dashboard and converter previews. Corre
 
 ## Raleway, icons and cards verification
 Verified packed Raleway glyph faces for Normal, Medium, SemiBold and Bold; all resolved to embedded Fonts resources. Rendered and inspected dark/light dashboard and converter previews. Published the self-contained app and passed the isolated-profile smoke test, including all four dashboard-card actions, all ten tool windows, converter dropdown expansion/collapse, preference restart and graceful exit. The first card test missed a control after child-window close; adding bounded owner-control lookup retries and a short close-settle interval resolved the harness failure. Confirmed published Fonts/OFL.txt and ThirdPartyNotices/Lucide-LICENSE.txt are present. No runtime downloads or system font installation are required.
+
+## Window control visibility correction
+Reduced the main window minimum size, explicitly retained standard resizable Windows chrome, and constrained main/tool startup bounds to the usable primary screen area. Self-contained publish succeeded. The app was left closed at the user's request; visual confirmation of the title-bar controls remains pending.

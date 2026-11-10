@@ -39,6 +39,7 @@ public partial class MainWindow : Window
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
+        WindowPlacement.FitToWorkArea(this);
         shortcuts = new ShortcutService(new System.Windows.Interop.WindowInteropHelper(this).Handle, ShowCommands);
         try { var preference = LocalConfiguration.Load("shortcut.json", new ShortcutPreference()); if (preference.Enabled && !shortcuts.Set(6, (uint)System.Windows.Input.KeyInterop.VirtualKeyFromKey(Enum.Parse<System.Windows.Input.Key>(preference.Key)))) model.Status = "Ctrl+Shift shortcut is occupied. Open Shortcut Studio to choose another."; }
         catch (Exception ex) { model.Status = "Could not load shortcut preference: " + ex.Message; }
