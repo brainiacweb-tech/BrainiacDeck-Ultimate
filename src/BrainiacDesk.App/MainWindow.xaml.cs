@@ -12,7 +12,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         this.model = model;
-        DataContext = model;
+        DataContext = model; Activated += (_, _) => model.RefreshLocalData();
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Open BrainiacDesk", null, (_, _) => Restore());
         menu.Items.Add("Exit", null, (_, _) => Close());
@@ -47,7 +47,7 @@ public partial class MainWindow : Window
     private void Restore() { Show(); WindowState = WindowState.Normal; Activate(); }
     protected override void OnClosing(CancelEventArgs e)
     {
-        if (OwnedWindows.OfType<ToolWindow>().Any(window => window.IsBusy)) { e.Cancel = true; model.Status = "Wait for active operations or cancel them before exiting."; return; }
+        if (Application.Current.Windows.OfType<ToolWindow>().Any(window => window.IsBusy)) { e.Cancel = true; model.Status = "Wait for active operations or cancel them before exiting."; return; }
         if (model.ConfirmExit && MessageBox.Show(this, "Exit BrainiacDesk?", "BrainiacDesk", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) { e.Cancel = true; return; }
         shortcuts?.Dispose();
         tray.Visible = false;

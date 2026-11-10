@@ -9,3 +9,6 @@ Raleway Regular, Medium, SemiBold and Bold are embedded as WPF resources from th
 
 ## Native video
 Vortice.MediaFoundation 3.8.3 (MIT; upstream commit 9e609cb9439c9872aa1b339f177e40ec96f77239) binds the Windows Media Foundation H.264 encoder/decoder. Its exact-revision notice is in VORTICE-LICENSE.txt and published under ThirdPartyNotices. No FFmpeg executable or downloaded codec is used. Transitive bindings include Vortice.DirectX 3.8.3, Vortice.Mathematics 2.1.0 and SharpGen.Runtime / SharpGen.Runtime.COM 2.4.2-beta; full redistribution inventory remains a release gate.
+
+## Offline speech and protected content
+System.Speech 10.0.0 (Microsoft, MIT) calls the installed local Windows speech recognizer. Windows account protection comes from the Windows Desktop runtime's ProtectedData API; no extra ProtectedData package is necessary. DEPENDENCY-INVENTORY.json records all restored direct/transitive package versions, declared licenses and repository revisions. This inventory is evidence for redistribution review, not a legal approval.

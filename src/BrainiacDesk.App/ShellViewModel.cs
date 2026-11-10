@@ -20,6 +20,8 @@ public partial class ShellViewModel(ISettingsStore store, ILogger<ShellViewModel
     [ObservableProperty] private bool isDark = true;
     [ObservableProperty] private bool minimizeToTray = true;
     [ObservableProperty] private bool confirmExit = true;
+    public void RefreshLocalData() => OnPropertyChanged(nameof(DashboardData));
+    public string DashboardData => OperationJournal.Summary();
     public string DataLocation => LocalPaths.Data;
     public async Task InitializeAsync()
     {
@@ -32,6 +34,7 @@ public partial class ShellViewModel(ISettingsStore store, ILogger<ShellViewModel
     }
     [RelayCommand] private void Navigate(string destination)
     {
+        OnPropertyChanged(nameof(DashboardData));
         Page = destination;
         IsWelcome = destination == "Welcome";
         IsDashboard = destination == "Dashboard";

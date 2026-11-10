@@ -5,7 +5,7 @@ Short description: Local Windows tools for files, snippets, scripts and screensh
 
 Full description: BrainiacDesk brings practical offline tools into one native Windows desktop app. Convert supported images, assemble and manage PDF pages, keep temporary clipboard snippets with explicit monitoring consent, read scripts in a floating teleprompter, verify checksums, create and safely extract ZIPs, review numbered renames, and find byte-verified duplicates. Use a keyboard command palette, named tool collections, and manual copy/hash/ZIP workflows. Capture and annotate screenshots with opaque redaction and local export. No account or subscription is required.
 
-Feature highlights: Local processing; opt-in memory-only clipboard shelf; native teleprompter; supported image/PDF tools; checksum and archive tools; manual workflows; screenshot annotations.
+Feature highlights: Local processing; clipboard shelf with opt-in encrypted persistence; native independent teleprompter with protected script library; supported image/PDF tools; checksum and archive tools; manual workflows; screenshot annotations.
 
 Keywords: productivity, converter, clipboard, teleprompter, screenshot, checksum, zip.
 

@@ -16,14 +16,15 @@ public sealed class ConverterWindow : ToolWindow
     private readonly Slider quality = new() { Minimum = 1, Maximum = 100, Value = 85, TickFrequency = 1, IsSnapToTickEnabled = true };
     private readonly TextBox width;
     private CancellationTokenSource? cancellation;
+    private Button? emailPreset;
     private readonly TextBox results = new() { IsReadOnly = true, Height = 100, AcceptsReturn = true, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, TextWrapping = TextWrapping.Wrap };
     public ConverterWindow() : base("Smart File Converter")
     {
         Note("Drop files or choose inputs. GIF/TIFF conversion exports the first frame only. JPEG transparency becomes white. Markdown exports source text, without rich layout.");
         files.CollectionChanged += (_, _) => RefreshFormats();
         list = new ListBox { ItemsSource = files, Height = 150 }; Body.Children.Add(list);
-        AllowDrop = true; Drop += (_, e) => { if (cancellation is null && e.Data.GetData(DataFormats.FileDrop) is string[] paths) Add(paths); };
-        Action("Add files", () => { if (cancellation is null) Add(PickFiles("Supported inputs|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.txt;*.md;*.pdf")); return Task.CompletedTask; });
+        AllowDrop = true; Drop += (_, e) => { if (cancellation is null && e.Data.GetData(DataFormats.FileDrop) is string[] paths) AddInputs(paths); };
+        Action("Add files", () => { if (cancellation is null) AddInputs(PickFiles("Supported inputs|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.txt;*.md;*.pdf")); return Task.CompletedTask; });
         Action("Remove selected", () => { if (cancellation is null && list.SelectedItem is string selected) files.Remove(selected); return Task.CompletedTask; });
         var previewImage = new System.Windows.Controls.Image { Height = 120, Stretch = System.Windows.Media.Stretch.Uniform };
         Body.Children.Add(previewImage);
@@ -39,7 +40,7 @@ public sealed class ConverterWindow : ToolWindow
         Action("Choose output folder", () => { var path = PickFolder(); if (path is not null) folder.Text = path; return Task.CompletedTask; });
         Action("Save conversion preset", () => { LocalConfiguration.Save("conversion-preset.json", new ConversionPreset((string)format.SelectedItem, (int)quality.Value, width.Text, folder.Text)); Status.Text = "Preset saved locally."; return Task.CompletedTask; });
         Action("Load conversion preset", () => { var preset = LocalConfiguration.Load<ConversionPreset?>("conversion-preset.json", null) ?? throw new InvalidOperationException("Save a preset first."); if (!format.Items.Contains(preset.Format)) throw new InvalidOperationException("Preset format is not compatible with current inputs."); format.SelectedItem = preset.Format; quality.Value = preset.Quality; width.Text = preset.Width; folder.Text = preset.Folder; return Task.CompletedTask; });
-        Action("Optimize for email", () => { format.SelectedItem = "JPG"; quality.Value = 75; width.Text = "1600"; return Task.CompletedTask; });
+        emailPreset = Action("Optimize for email", () => { format.SelectedItem = "JPG"; quality.Value = 75; width.Text = "1600"; return Task.CompletedTask; });
         Body.Children.Add(results);
         Action("Convert queue", ConvertAsync);
         Action("Cancel queue", () => { cancellation?.Cancel(); return Task.CompletedTask; });
@@ -48,6 +49,8 @@ public sealed class ConverterWindow : ToolWindow
         Action("Extract / reorder PDF pages", async () => { var paths = PickFiles("PDF|*.pdf"); if (paths.Length == 0) return; var output = SaveFile("PDF|*.pdf", ".pdf"); if (output is null) return; var selection = pages.Text; await Task.Run(() => PdfPages.Extract(paths[0], output, selection, CancellationToken.None)); Status.Text = "PDF pages exported."; });
         Action("Split PDF to individual pages", async () => { var paths = PickFiles("PDF|*.pdf"); if (paths.Length == 0) return; var output = PickFolder(); if (output is null) return; await Task.Run(() => { using var document = PdfSharp.Pdf.IO.PdfReader.Open(paths[0], PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import); for (int i = 1; i <= document.PageCount; i++) PdfPages.Extract(paths[0], ConversionEngine.UniquePath(output, "Page-" + i.ToString("D4"), ".pdf"), i.ToString(), CancellationToken.None); }); Status.Text = "Split pages exported; existing files preserved."; });
         Action("View PDF metadata", async () => { var paths = PickFiles("PDF|*.pdf"); if (paths.Length > 0) Status.Text = await Task.Run(() => PdfPages.Metadata(paths[0])); });
+        results.Text = string.Join(Environment.NewLine, OperationJournal.Load().Where(x => x.Module == "Converter").Select(x => $"{x.Time:u} · {x.Outcome} · {x.Input} → {x.Output} · {x.Bytes:N0} bytes"));
+        System.Windows.Automation.AutomationProperties.SetName(folder,"Output folder"); System.Windows.Automation.AutomationProperties.SetName(width,"Maximum image width"); System.Windows.Automation.AutomationProperties.SetName(format,"Output format");
         DesignLayout(previewImage, pages);
         Closing += (_, e) => { if (cancellation is not null) { cancellation.Cancel(); e.Cancel = true; Status.Text = "Cancelling. Close again after the current operation stops."; } };
     }
@@ -85,9 +88,10 @@ public sealed class ConverterWindow : ToolWindow
         var onlyImages = files.All(path => ConversionEngine.ImageExtensions.Contains(Path.GetExtension(path).ToLowerInvariant()));
         var onlyPdf = files.Count > 0 && files.All(path => Path.GetExtension(path).Equals(".pdf", StringComparison.OrdinalIgnoreCase));
         format.ItemsSource = onlyImages ? new[] { "PNG", "JPG", "BMP", "TIFF", "GIF", "Combined PDF" } : onlyPdf ? new[] { "Combined PDF", "PDF rotate 90°", "PDF reverse" } : new[] { "Combined PDF" };
+        if (emailPreset is not null) emailPreset.IsEnabled = format.Items.Contains("JPG");
         if (previous is not null && format.Items.Contains(previous)) format.SelectedItem = previous; else format.SelectedIndex = 0;
     }
-    private void Add(string[] paths) { foreach (var path in paths.Where(File.Exists).Take(500 - files.Count)) if (!files.Contains(path)) files.Add(path); Status.Text = $"{files.Count} inputs selected."; }
+    public void AddInputs(string[] paths) { foreach (var path in paths.Where(File.Exists).Take(500 - files.Count)) if (!files.Contains(path)) files.Add(path); Status.Text = $"{files.Count} inputs selected."; }
     private async Task ConvertAsync()
     {
         if (files.Count == 0) throw new InvalidOperationException("Add at least one file.");
@@ -101,7 +105,7 @@ public sealed class ConverterWindow : ToolWindow
             {
                 var output = ConversionEngine.UniquePath(destination, "BrainiacDesk document", ".pdf");
                 await Task.Run(() => ConversionEngine.Pdf(inputs, output, operation, token));
-                Status.Text = "Created " + output; return;
+                OperationJournal.Record("Converter", string.Join("; ",inputs), output, "Completed"); results.AppendText("Created " + output + Environment.NewLine); Status.Text = OperationJournal.LastError ?? "Created " + output; return;
             }
             foreach (var input in inputs)
             {
@@ -110,12 +114,12 @@ public sealed class ConverterWindow : ToolWindow
                 {
                     var output = ConversionEngine.UniquePath(destination, Path.GetFileNameWithoutExtension(input), "." + operation.ToLowerInvariant());
                     await StaWorker.Run(() => ConversionEngine.Image(input, output, jpegQuality, maxWidth, token));
-                    successful++; results.AppendText($"{Path.GetFileName(input)} → {Path.GetFileName(output)} · {new FileInfo(input).Length:N0} → {new FileInfo(output).Length:N0} bytes" + Environment.NewLine);
+                    OperationJournal.Record("Converter", input, output, "Completed"); successful++; results.AppendText($"{Path.GetFileName(input)} → {Path.GetFileName(output)} · {new FileInfo(input).Length:N0} → {new FileInfo(output).Length:N0} bytes" + Environment.NewLine);
                 }
                 catch (OperationCanceledException) { throw; }
-                catch (Exception ex) { failed++; results.AppendText("FAILED " + Path.GetFileName(input) + ": " + ex.Message + Environment.NewLine); }
+                catch (Exception ex) { OperationJournal.Record("Converter", input, "", "Failed: " + ex.Message); failed++; results.AppendText("FAILED " + Path.GetFileName(input) + ": " + ex.Message + Environment.NewLine); }
             }
-            Status.Text = $"Finished: {successful} converted, {failed} failed. Inputs are retained for retry; existing outputs were preserved.";
+            Status.Text = OperationJournal.LastError ?? $"Finished: {successful} converted, {failed} failed. Inputs are retained for retry; existing outputs were preserved.";
         }
         catch (OperationCanceledException) { Status.Text = $"Cancelled. {successful} files completed; completed outputs are retained."; }
         finally { cancellation.Dispose(); cancellation = null; }

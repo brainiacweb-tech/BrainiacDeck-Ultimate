@@ -11,10 +11,10 @@ Onboarding completion; Settings, Help, About and Dashboard navigation; all ten t
 Live clipboard capture/copy and monitoring unregister; tray interactions and confirmation dialogs; full live desktop recording and foreground/region selection acceptance; capture exclusion with specific recorders; teleprompter timing, keyboard focus and overlay behavior; global shortcut conflicts; drag/drop; workspaces and presets through the full UI; cancellation during large real batches; PDF split UI; high DPI and multi-monitor behavior. UI smoke tests exercise window creation, not every operation.
 
 ## Remaining specification gaps
-- WebP, rich Markdown rendering, DOCX, PDF image extraction/compression, password-protected archives and media engines are not included. GIF/TIFF conversion uses only the first frame.
-- Converter lacks circular format UI, persistent recent-conversion history, and multi-preset management. It has one saved preset and file-level status, not codec-internal progress.
-- Clipboard shelf has one memory-only collection, fixed 50-item/one-hour retention, basic pinning and search. Named shelves/categories, process exclusions, adjustable retention/history limits, persistent encrypted storage and startup integration are not implemented. Privacy filters cannot reliably identify secrets.
-- Teleprompter lacks a managed script library/search and persisted defaults. It uses manually saved/imported files. Recorder exclusion is not guaranteed.
+- WebP, rich Markdown rendering, DOCX, PDF image extraction/compression, password-protected archives are not included. Native silent video capture/editing is implemented; no external media engine is bundled. GIF/TIFF conversion uses only the first frame.
+- Converter lacks circular format UI, multi-preset management. It has protected retained conversion history, one saved preset and file-level status, not codec-internal progress.
+- Clipboard shelf has one collection with optional protected persistence, fixed 50-item/one-hour retention, basic pinning and search. Named shelves/categories, process exclusions, adjustable retention/history limits, startup integration is not implemented. Privacy filters cannot reliably identify secrets.
+- Teleprompter now has an independent native overlay, protected searchable script library, persisted geometry/settings and genuine optional offline speech recognition. Real microphone/meeting-app compatibility, monitor hot-plug and mixed-DPI interactions require manual acceptance. Recorder exclusion is not guaranteed.
 - Command actions open tools; contextual file inputs and command file-drop pipelines are not implemented. Shortcut Studio manages one command-center global hotkey.
 - Workflow triggers are manual only; copy/hash/ZIP steps use the original selected source set. Folder monitoring, schedules, clipboard triggers, conversion/rename/move steps, sophisticated conditions and visual connection editing remain deferred.
 - File toolkit lacks advanced rename patterns, automatic duplicate cleanup and temporary-file cleanup. It does not delete duplicate files.
@@ -26,3 +26,4 @@ Live clipboard capture/copy and monitoring unregister; tray interactions and con
 
 ## Packaging
 Original PNG/ICO assets and a .wapproj/manifest/package script exist. Self-contained x64 publishing is supported. Windows SDK MakeAppx/SignTool were not found in the checked environment. Publisher identity is deliberately a placeholder. No MSIX, signing, installation, upgrade, uninstall, WACK or Store certification result is claimed.
+See PRODUCTION-AUDIT.md for the repository-wide audit, actual data sources and remaining release gates.

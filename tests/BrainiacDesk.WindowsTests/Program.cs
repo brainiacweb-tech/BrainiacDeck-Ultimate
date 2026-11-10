@@ -7,6 +7,7 @@ internal static class Program
 {
     [STAThread] private static void Main(string[] args)
     {
+        if (args.Contains("--teleprompter-tests")) { TeleprompterTests.Run(); return; }
         if (args.Contains("--visual-review")) { VisualReview.Run(); return; }
         var folder = Path.Combine(Path.GetTempPath(), "BrainiacDeskConversionTests", Guid.NewGuid().ToString("N")); Directory.CreateDirectory(folder);
         int count = 0;

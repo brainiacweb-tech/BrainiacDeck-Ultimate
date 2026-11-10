@@ -7,3 +7,8 @@ Run both executable integration harnesses (not VSTest projects):
 Then run `pwsh -File scripts/ui-smoke.ps1` on an interactive Windows desktop. It uses a unique temporary profile, verifies first-run setup, navigates the shell, opens/closes all tools, checks clipboard consent defaults, and verifies preferences across graceful exit/restart. Temporary profiles are retained for inspection. Normal profile preferences and clipboard contents are not modified by this smoke test.
 
 `dotnet test` does not execute these harnesses. UI tests do not prove every control, hotkey, tray interaction or real capture path. See docs/QA-RESULTS.md and docs/READINESS.md for exact scope and pending manual tests.
+Run native overlay/persistence and real converter/shelf/workspace/command/workflow UI-operation checks on an interactive Windows desktop:
+
+    dotnet run --project tests/BrainiacDesk.WindowsTests -c Release -- --teleprompter-tests
+
+This uses isolated local fixtures and encrypted profiles. It does not enable the microphone, send meeting input, or modify the normal clipboard. See docs/PRODUCTION-AUDIT.md for required live speech/meeting/DPI acceptance.

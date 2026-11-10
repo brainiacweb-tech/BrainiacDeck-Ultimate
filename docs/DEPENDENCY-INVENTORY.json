@@ -1,0 +1,149 @@
+[
+  {
+    "package": "CommunityToolkit.Mvvm/8.4.0",
+    "license": "MIT",
+    "copyright": "(c) .NET Foundation and Contributors. All rights reserved.",
+    "repository": "https://github.com/CommunityToolkit/dotnet",
+    "commit": "638b41dad30dffabb123a39aa38eabc7e3721371"
+  },
+  {
+    "package": "Microsoft.Data.Sqlite/10.0.14",
+    "license": "MIT",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "repository": "https://github.com/dotnet/dotnet",
+    "commit": "0427b9abbead3fa64c6655eb4290c537397131fa"
+  },
+  {
+    "package": "Microsoft.Data.Sqlite.Core/10.0.14",
+    "license": "MIT",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "repository": "https://github.com/dotnet/dotnet",
+    "commit": "0427b9abbead3fa64c6655eb4290c537397131fa"
+  },
+  {
+    "package": "Microsoft.Extensions.DependencyInjection/10.0.0",
+    "license": "MIT",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "repository": "https://github.com/dotnet/dotnet",
+    "commit": "b0f34d51fccc69fd334253924abd8d6853fad7aa"
+  },
+  {
+    "package": "Microsoft.Extensions.DependencyInjection.Abstractions/10.0.0",
+    "license": "MIT",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "repository": "https://github.com/dotnet/dotnet",
+    "commit": "b0f34d51fccc69fd334253924abd8d6853fad7aa"
+  },
+  {
+    "package": "Microsoft.Extensions.Logging/10.0.0",
+    "license": "MIT",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "repository": "https://github.com/dotnet/dotnet",
+    "commit": "b0f34d51fccc69fd334253924abd8d6853fad7aa"
+  },
+  {
+    "package": "Microsoft.Extensions.Logging.Abstractions/10.0.0",
+    "license": "MIT",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "repository": "https://github.com/dotnet/dotnet",
+    "commit": "b0f34d51fccc69fd334253924abd8d6853fad7aa"
+  },
+  {
+    "package": "Microsoft.Extensions.Options/10.0.0",
+    "license": "MIT",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "repository": "https://github.com/dotnet/dotnet",
+    "commit": "b0f34d51fccc69fd334253924abd8d6853fad7aa"
+  },
+  {
+    "package": "Microsoft.Extensions.Primitives/10.0.0",
+    "license": "MIT",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "repository": "https://github.com/dotnet/dotnet",
+    "commit": "b0f34d51fccc69fd334253924abd8d6853fad7aa"
+  },
+  {
+    "package": "PDFsharp-WPF/6.2.4",
+    "license": "MIT",
+    "copyright": "© 2026 empira",
+    "repository": "https://github.com/empira/PDFsharp",
+    "commit": null
+  },
+  {
+    "package": "SharpGen.Runtime/2.4.2-beta",
+    "license": "MIT",
+    "copyright": "(c) 2010-2017 Alexandre Mutel, 2017-2023 Jeremy Koritzinsky, 2023-2024 Amer Koleci",
+    "repository": "https://github.com/SharpGenTools/SharpGenTools",
+    "commit": "6990bcafe124a4c22515ad19cee5a081da8db67b"
+  },
+  {
+    "package": "SharpGen.Runtime.COM/2.4.2-beta",
+    "license": "MIT",
+    "copyright": "(c) 2010-2017 Alexandre Mutel, 2017-2023 Jeremy Koritzinsky, 2023-2024 Amer Koleci",
+    "repository": "https://github.com/SharpGenTools/SharpGenTools",
+    "commit": "6990bcafe124a4c22515ad19cee5a081da8db67b"
+  },
+  {
+    "package": "SQLite/3.53.4",
+    "license": "LICENSE.txt",
+    "copyright": "Copyright 2014-2026 SourceGear, LLC",
+    "repository": null,
+    "commit": null
+  },
+  {
+    "package": "SQLitePCLRaw.bundle_e_sqlite3/3.0.5",
+    "license": "Apache-2.0",
+    "copyright": "Copyright 2014-2026 SourceGear, LLC",
+    "repository": "https://github.com/ericsink/SQLitePCL.raw",
+    "commit": null
+  },
+  {
+    "package": "SQLitePCLRaw.config.e_sqlite3/3.0.5",
+    "license": "Apache-2.0",
+    "copyright": "Copyright 2014-2026 SourceGear, LLC",
+    "repository": "https://github.com/ericsink/SQLitePCL.raw",
+    "commit": "96043b8cff323f21919df86a431c136655d81b4a"
+  },
+  {
+    "package": "SQLitePCLRaw.core/3.0.5",
+    "license": "Apache-2.0",
+    "copyright": "Copyright 2014-2025 SourceGear, LLC",
+    "repository": "https://github.com/ericsink/SQLitePCL.raw",
+    "commit": "ed046114d5a30534e13294d94d78eb73de896ad4"
+  },
+  {
+    "package": "SQLitePCLRaw.provider.e_sqlite3/3.0.5",
+    "license": "Apache-2.0",
+    "copyright": "Copyright 2014-2025 SourceGear, LLC",
+    "repository": "https://github.com/ericsink/SQLitePCL.raw",
+    "commit": "ed046114d5a30534e13294d94d78eb73de896ad4"
+  },
+  {
+    "package": "System.Speech/10.0.0",
+    "license": "MIT",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "repository": "https://github.com/dotnet/dotnet",
+    "commit": "b0f34d51fccc69fd334253924abd8d6853fad7aa"
+  },
+  {
+    "package": "Vortice.DirectX/3.8.3",
+    "license": "MIT",
+    "copyright": "Copyright (c) Amer Koleci and Contributors",
+    "repository": "https://github.com/amerkoleci/Vortice.Windows",
+    "commit": "9e609cb9439c9872aa1b339f177e40ec96f77239"
+  },
+  {
+    "package": "Vortice.Mathematics/2.1.0",
+    "license": "MIT",
+    "copyright": "Copyright (c) Amer Koleci and Contributors",
+    "repository": "https://github.com/amerkoleci/Vortice.Mathematics",
+    "commit": "fa05ec6dcba48f3f7331791da6dc7f3d866b2ad6"
+  },
+  {
+    "package": "Vortice.MediaFoundation/3.8.3",
+    "license": "MIT",
+    "copyright": "Copyright (c) Amer Koleci and Contributors",
+    "repository": "https://github.com/amerkoleci/Vortice.Windows",
+    "commit": "9e609cb9439c9872aa1b339f177e40ec96f77239"
+  }
+]

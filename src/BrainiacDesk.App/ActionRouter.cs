@@ -22,9 +22,9 @@ public sealed class ActionRouter(Window owner)
         if (!windows.TryGetValue(id, out var window))
         {
             window = id switch { "convert" => new ConverterWindow(), "shelf" => new ClipboardShelfWindow(), "prompt" => new TeleprompterWindow(), "files" => new FileToolsWindow(), "workflow" => new WorkflowWindow(), "capture" => new CaptureWindow(this), "workspaces" => new WorkspaceWindow(this), "privacy" => new PrivacyWindow(), _ => throw new ArgumentException("Unknown action.") };
-            windows[id] = window; window.Owner = owner; window.Closed += (_, _) => windows.Remove(id);
+            windows[id] = window; if (id != "prompt") window.Owner = owner; window.Closed += (_, _) => windows.Remove(id);
         }
-        window.Show(); if (window.WindowState == WindowState.Minimized) window.WindowState = WindowState.Normal; window.Activate();
+        window.Show(); if (window.WindowState == WindowState.Minimized) window.WindowState = WindowState.Normal; if (id != "prompt") window.Activate();
         ActivityLog.Record("Opened " + id);
     }
     public void CloseAll() { foreach (var window in windows.Values.ToArray()) window.Close(); }
@@ -50,7 +50,7 @@ public static class LocalConfiguration
 {
     public static void Save<T>(string name, T value)
     {
-        Directory.CreateDirectory(ActivityLog.Folder); var path = Path.Combine(ActivityLog.Folder, name); var temp = path + ".tmp";
+        Directory.CreateDirectory(ActivityLog.Folder); var path = Path.Combine(ActivityLog.Folder, name); var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try { File.WriteAllText(temp, JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true })); File.Move(temp, path, true); }
         finally { if (File.Exists(temp)) File.Delete(temp); }
     }

@@ -39,6 +39,7 @@ public sealed class CaptureWindow : ToolWindow
     private string? lastVideo, imageInput;
     public CaptureWindow(ActionRouter router) : base("Screen Capture Studio")
     {
+        lastVideo=OperationJournal.Load().FirstOrDefault(x=>x.Module == "Recording" && x.Outcome == "Completed" && File.Exists(x.Output))?.Output;
         this.router = router; Width = 1180; MinWidth = 860;
         Note("Desktop screenshots and local video, ready to edit and share.");
         var target = new WrapPanel(); target.Children.Add(Field("Capture source", source, 210)); target.Children.Add(Field("Countdown · seconds", delay, 145)); target.Children.Add(cursor); Body.Children.Add(target);
@@ -118,7 +119,7 @@ public sealed class CaptureWindow : ToolWindow
             var target = source.SelectedIndex; var wait = (int)delay.SelectedItem; var pointer = cursor.IsChecked == true; var outputPreset = (CapturePreset)size.SelectedItem; var frameRate = (int)fps.SelectedItem; var fill = framing.SelectedIndex == 1;
             using var hidden = new CaptureVisibilityScope(); await Task.Delay(TimeSpan.FromSeconds(wait)); var area = ChooseArea(target); if (area is null) { Status.Text = "Recording cancelled."; return; }
             await Task.Delay(180); using var session = new VideoRecording(); var controller = new RecordingController(session); controller.Show();
-            try { await session.RunAsync(area.Value,path,outputPreset,fill,pointer,frameRate); lastVideo = path; Status.Text = $"Saved {session.Elapsed:hh\\:mm\\:ss} · {session.Frames} frames · {path}"; }
+            try { await session.RunAsync(area.Value,path,outputPreset,fill,pointer,frameRate); lastVideo = path; OperationJournal.Record("Recording", "Desktop", path, "Completed"); Status.Text = $"Saved {session.Elapsed:hh\\:mm\\:ss} · {session.Frames} frames · {path}"; }
             finally { controller.Close(); }
         },actions); start.Style = (Style)FindResource("Primary");
         Action("Edit last recording", () => { if (lastVideo is null) throw new InvalidOperationException("Record a clip first or open an MP4 below."); new VideoEditorWindow(lastVideo) { Owner = this }.Show(); return Task.CompletedTask; },actions);
@@ -154,7 +155,7 @@ public sealed class CaptureWindow : ToolWindow
         var rendered = ExportImage(); var path = SaveFile(jpeg ? "JPEG|*.jpg" : "PNG|*.png",jpeg ? ".jpg" : ".png"); if(path is null) return Task.CompletedTask;
         if (imageInput is not null && string.Equals(Path.GetFullPath(path),imageInput,StringComparison.OrdinalIgnoreCase)) throw new IOException("Choose a new filename to preserve your original image.");
         BitmapEncoder encoder = jpeg ? new JpegBitmapEncoder { QualityLevel = (int)quality.Value } : new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(rendered));
-        WriteExport(path,stream => encoder.Save(stream)); Status.Text = $"Saved {rendered.PixelWidth} × {rendered.PixelHeight} · {new FileInfo(path).Length:N0} bytes"; return Task.CompletedTask;
+        WriteExport(path,stream => encoder.Save(stream)); OperationJournal.Record("Capture", "Edited image", path, "Completed"); Status.Text = $"Saved {rendered.PixelWidth} × {rendered.PixelHeight} · {new FileInfo(path).Length:N0} bytes"; return Task.CompletedTask;
     }
     private Task ExportPdfAsync()
     {
