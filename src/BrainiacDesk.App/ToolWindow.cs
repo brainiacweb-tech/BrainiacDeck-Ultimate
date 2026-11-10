@@ -46,7 +46,7 @@ public class ToolWindow : Window
     protected void Note(string text) => Body.Children.Add(new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 16), FontSize = 13, LineHeight = 21 });
     protected Button Action(string text, Func<Task> action, Panel? parent = null)
     {
-        var button = new Button { Content = text };
+        var button = new Button { Content = text }; button.SetResourceReference(IconAssist.SourceProperty, "Icon.Nav." + IconAssist.ForAction(text));
         button.Click += async (_, _) => { button.IsEnabled = false; activeOperations++; try { await action(); } catch (Exception ex) { Status.Text = ex.Message; } finally { activeOperations--; button.IsEnabled = true; } };
         (parent ?? Body).Children.Add(button); return button;
     }

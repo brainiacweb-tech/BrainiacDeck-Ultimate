@@ -23,8 +23,14 @@ function Wait-Window([string]$title) {
     throw "Window did not appear: $title"
 }
 function Control([string]$name) {
-    $element=$script:window.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$name))
-    if (!$element) { throw "Missing control: $name" }; return $element
+    for($attempt=0;$attempt -lt 30;$attempt++) {
+        $element=$script:window.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$name))
+        if($element) { return $element }
+        Start-Sleep -Milliseconds 100
+    }
+    $buttons=$script:window.FindAll([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty,[System.Windows.Automation.ControlType]::Button))
+    $names=@($buttons | ForEach-Object {$_.Current.Name}) -join ', '
+    throw "Missing control: $name. Available buttons: $names"
 }
 function Invoke-Button([string]$name) { (Control $name).GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke(); Start-Sleep -Milliseconds 250 }
 function Toggle-Off([string]$name) { $pattern=(Control $name).GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern); if($pattern.Current.ToggleState -eq [System.Windows.Automation.ToggleState]::On) {$pattern.Toggle()} }
@@ -39,6 +45,13 @@ try {
     Invoke-Button 'About'
     Invoke-Button 'Dashboard'
     Write-Output 'PASS: Onboarding, settings save and shell navigation.'
+    foreach($card in @(@('Open converter','Smart File Converter'),@('Open shelf','Clipboard Shelf'),@('Open teleprompter','Floating Teleprompter'),@('Open capture','Screen Capture Studio'))) {
+        Invoke-Button $card[0]
+        $cardWindow=Wait-Window ($card[1]+' · BrainiacDesk')
+        $cardWindow.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+        Start-Sleep -Milliseconds 300
+    }
+    Write-Output 'PASS: All four dashboard cards execute their actions.'
     $tools=@{
         'File Converter'='Smart File Converter'; 'Clipboard Shelf'='Clipboard Shelf'; 'Teleprompter'='Floating Teleprompter';
         'File Toolkit'='File Management Toolkit'; 'Workflow Studio'='Workflow Automation Studio'; 'Screen Capture'='Screen Capture Studio';

@@ -33,3 +33,6 @@ No performance numbers, Store approval, WACK success, full security review or co
 
 ## Interface redesign verification
 Rendered and inspected actual dark/light dashboard and converter previews. Corrected clipped text fields and dark-theme text inheritance. Release build passed with zero warnings/errors. Republished the final self-contained executable and passed the full isolated-profile UI smoke check, including all ten tool windows, converter dropdown expansion/collapse, saved settings across process restart and graceful exit. New styling does not imply a completed accessibility or multi-DPI audit.
+
+## Raleway, icons and cards verification
+Verified packed Raleway glyph faces for Normal, Medium, SemiBold and Bold; all resolved to embedded Fonts resources. Rendered and inspected dark/light dashboard and converter previews. Published the self-contained app and passed the isolated-profile smoke test, including all four dashboard-card actions, all ten tool windows, converter dropdown expansion/collapse, preference restart and graceful exit. The first card test missed a control after child-window close; adding bounded owner-control lookup retries and a short close-settle interval resolved the harness failure. Confirmed published Fonts/OFL.txt and ThirdPartyNotices/Lucide-LICENSE.txt are present. No runtime downloads or system font installation are required.

@@ -60,5 +60,7 @@ public partial class ShellViewModel(ISettingsStore store, ILogger<ShellViewModel
         void Set(string key, string value) => resources[key] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(value));
         Set("Background", IsDark ? "#101827" : "#F3F5F8"); Set("Surface", IsDark ? "#182438" : "#FFFFFF");
         Set("Ink", IsDark ? "#FFFFFF" : "#101827"); Set("Muted", IsDark ? "#AAB6C5" : "#48566A"); Set("Edge", IsDark ? "#304054" : "#CBD2DC");
+        Set("Accent", IsDark ? "#F59E0B" : "#B45309");
+        IconAssist.RefreshTheme();
     }
 }

@@ -12,11 +12,18 @@ internal static class VisualReview
         var folder = Path.GetFullPath("artifacts/ui-review"); Directory.CreateDirectory(folder);
         Environment.SetEnvironmentVariable("BRAINIACDESK_DATA", Path.Combine(Path.GetTempPath(), "BrainiacDesk-Design-" + Guid.NewGuid().ToString("N")));
         var app = new App(); app.InitializeComponent();
+        foreach (var weight in new[] { FontWeights.Normal, FontWeights.Medium, FontWeights.SemiBold, FontWeights.Bold })
+        {
+            var face = new Typeface((FontFamily)app.FindResource("AppFont"), FontStyles.Normal, weight, FontStretches.Normal);
+            if (!face.TryGetGlyphTypeface(out var glyph) || !glyph.FamilyNames.Values.Any(name => name.Contains("Raleway", StringComparison.OrdinalIgnoreCase))) throw new InvalidDataException("Bundled Raleway did not resolve: " + weight);
+            Console.WriteLine("Verified Raleway " + weight + ": " + glyph.FontUri);
+        }
         var model = new ShellViewModel(new SettingsStore(Path.Combine(BrainiacDesk.Core.LocalPaths.Data, "settings.db")), NullLogger<ShellViewModel>.Instance);
         model.InitializeAsync().GetAwaiter().GetResult(); model.NavigateCommand.Execute("Dashboard"); model.ConfirmExit = false;
         var main = new MainWindow(model); app.MainWindow = main; main.Show();
         void Capture(Window window, string name)
         {
+            window.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             window.UpdateLayout();
             var content = (FrameworkElement)window.Content;
             var image = new RenderTargetBitmap((int)content.ActualWidth, (int)content.ActualHeight, 96, 96, PixelFormats.Pbgra32); image.Render(content);
