@@ -10,7 +10,7 @@ function Launch {
         $parameters = @{ FilePath = $dotnet; ArgumentList = @('exec', ('"' + $dll + '"')); WindowStyle = 'Hidden'; Environment = @{ BRAINIACDESK_DATA = $profile }; PassThru = $true }
     if ($Executable) { $parameters.FilePath = (Resolve-Path -LiteralPath $Executable).Path; $parameters.Remove('ArgumentList') }
     $script:process = Start-Process @parameters
-    $script:window = Wait-Window 'BrainiacDesk Ultimate'
+    $script:window = Wait-Window 'BrainiacDeck Ultimate'
 }
 function Wait-Window([string]$title) {
     for ($attempt=0; $attempt -lt 160; $attempt++) {
@@ -46,87 +46,75 @@ try {
     Invoke-Button 'About'
     Invoke-Button 'Dashboard'
     Write-Output 'PASS: Onboarding, settings save and shell navigation.'
-    foreach($card in @(@('Open converter','Smart File Converter'),@('Open shelf','Clipboard Shelf'),@('Open teleprompter','Floating Teleprompter'),@('Open capture','Screen Capture Studio'))) {
-        Invoke-Button $card[0]
-        $cardWindow=Wait-Window ($card[1]+' · BrainiacDesk')
-        if($card[1] -eq 'Floating Teleprompter') {
-            $close=$cardWindow.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,'Close teleprompter'))
-            $close.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
-        } else { $cardWindow.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close() }
-        Start-Sleep -Milliseconds 300
-    }
-    Write-Output 'PASS: All four dashboard cards execute their actions.'
-    $tools=@{
-        'File Converter'='Smart File Converter'; 'Clipboard Shelf'='Clipboard Shelf'; 'Teleprompter'='Floating Teleprompter';
-        'File Toolkit'='File Management Toolkit'; 'Workflow Studio'='Workflow Automation Studio'; 'Screen Capture'='Screen Capture Studio';
-        'Workspaces'='Workspaces'; 'Shortcuts'='Shortcut Studio'; 'Privacy / Diagnostics'='Privacy, Activity and Diagnostics'; 'Command Center'='Universal Command Center'
-    }
-    foreach($button in $tools.Keys) {
+    foreach($button in @('Open converter','Open shelf','Open teleprompter','Open capture')) {
         Invoke-Button $button
-        $tool=Wait-Window ($tools[$button]+' · BrainiacDesk')
+        Invoke-Button 'Close tool'
+        Invoke-Button 'Dashboard'
+    }
+    Write-Output 'PASS: Dashboard tools open and close inside the shell.'
+    foreach($button in @('File Converter','Clipboard Shelf','Teleprompter','File Toolkit','Workflow Studio','Screen Capture','Workspaces','Shortcuts','Privacy / Diagnostics','Command Center')) {
+        Invoke-Button $button
+        if($button -eq 'Clipboard Shelf') {
+            $consent=(Control 'Enable clipboard monitoring for this session (explicit consent)').GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
+            if($consent.Current.ToggleState -ne [System.Windows.Automation.ToggleState]::Off) { throw 'Clipboard monitoring was not disabled by default.' }
+        }
         if($button -eq 'Teleprompter') {
+            foreach($field in @(@('Script name','UI verification script'),@('Script text','This script was entered through the real packaged application editor.'))) {
+                $entry=$window.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.AndCondition]::new([System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$field[0]),[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty,[System.Windows.Automation.ControlType]::Edit)))
+                $entry.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($field[1])
+            }
+            Invoke-Button 'Save to script library'
+            Invoke-Button 'Use script in overlay'
+            $overlay=Wait-Window 'Floating Teleprompter · BrainiacDesk'
             $mainPattern=$window.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern)
             $mainPattern.SetWindowVisualState([System.Windows.Automation.WindowVisualState]::Minimized)
             Start-Sleep -Milliseconds 300
-            if($tool.Current.IsOffscreen) { throw 'Independent teleprompter disappeared when the main app minimized.' }
+            if($overlay.Current.IsOffscreen) { throw 'Explicit floating overlay disappeared when shell minimized.' }
             $mainPattern.SetWindowVisualState([System.Windows.Automation.WindowVisualState]::Normal)
-            $edit=$tool.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,'Edit script'))
-            $edit.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
-            $editor=Wait-Window 'Teleprompter Scripts · BrainiacDesk'
-            foreach($field in @(@('Script name','UI verification script'),@('Script text','This script was entered through the real packaged application editor.'))) {
-                $entry=$editor.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$field[0]))
-                $entry.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($field[1])
-            }
-            foreach($actionName in @('Save to script library','Use script in overlay')) {
-                $entry=$editor.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$actionName))
-                $entry.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
-                Start-Sleep -Milliseconds 150
-            }
-            $editor.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
-            $settingsButton=$tool.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,'Settings'))
-            $settingsButton.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
-            $promptSettings=Wait-Window 'Teleprompter Settings · BrainiacDesk'
-            $sliders=$promptSettings.FindAll([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty,[System.Windows.Automation.ControlType]::Slider))
-            $sliders[0].GetCurrentPattern([System.Windows.Automation.RangeValuePattern]::Pattern).SetValue(30)
-            $promptSettings.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
-            Write-Output 'PASS: Independent overlay survives main-window minimize; packaged script editor saves/applies text and settings adjust the font.'
-        }
-        if($button -eq 'Clipboard Shelf') {
-            $consent=$tool.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,'Enable clipboard monitoring for this session (explicit consent)'))
-            if(!$consent -or $consent.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -ne [System.Windows.Automation.ToggleState]::Off) { throw 'Clipboard monitoring was not disabled by default.' }
-        }
-        if($button -eq 'File Converter') {
-            $combo=$tool.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty,[System.Windows.Automation.ControlType]::ComboBox))
-            if(!$combo) { throw 'Converter output selector is missing.' }
-            $expand=$combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
-            $expand.Expand()
-            if($expand.Current.ExpandCollapseState -ne [System.Windows.Automation.ExpandCollapseState]::Expanded) { throw 'Styled format selector did not expand.' }
-            $expand.Collapse()
-        }
-        if($button -eq 'Screen Capture') {
-            foreach($tabName in @('Recording','Screenshots')) {
-                $tab=$tool.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$tabName))
-                if(!$tab) { throw "Missing capture tab: $tabName" }
-                $tab.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
-                Start-Sleep -Milliseconds 150
-                $actionName=if($tabName -eq 'Recording') {'Start recording'} else {'Capture screenshot'}
-                $action=$tool.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$actionName))
-                if(!$action -or !$action.Current.IsEnabled) { throw "Missing capture action: $actionName" }
-            }
-            Write-Output 'PASS: Screenshot and recording tabs expose their actions without starting capture.'
-        }
-        if($button -eq 'Teleprompter') {
-            $close=$tool.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,'Close teleprompter'))
+            $close=$overlay.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,'Close teleprompter'))
             $close.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
-        } else { $tool.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close() }
-        Write-Output "PASS: $button opens and closes."
+        }
+        Invoke-Button 'Close tool'
+        Invoke-Button 'Dashboard'
+        Write-Output "PASS: $button uses the main workspace."
     }
+    Invoke-Button 'Brainiac Edge'
+    $edgeWindow=Wait-Window 'Brainiac Edge workspace'
+    function Invoke-EdgeControl($root,[string]$name) {
+        $control=$root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,$name))
+        if(!$control) { throw "Missing Edge control: $name" }
+        $control.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Start-Sleep -Milliseconds 250
+    }
+    Invoke-EdgeControl $edgeWindow 'Add'
+    $edgeAdd=Wait-Window 'Add to Brainiac Edge · BrainiacDesk'
+    $edgeText=$edgeAdd.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty,[System.Windows.Automation.ControlType]::Edit))
+    $edgeText.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue('Edge process restart integration fixture')
+    Invoke-EdgeControl $edgeAdd 'Pin text / code / URL'
+    $edgeAdd.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+    Invoke-Button 'Brainiac Edge'
+    $edgeWindow=Wait-Window 'Brainiac Edge workspace'
+    Invoke-EdgeControl $edgeWindow 'Hide'
+    Write-Output 'PASS: Published candidate Edge navigation and real note pinning.'
     $window.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
     if(!$process.WaitForExit(10000)) { throw 'Graceful app exit timed out.' }
     if($process.ExitCode -ne 0) { throw 'Application exited with error.' }
     Launch
     Invoke-Button 'Settings'
     if((Control 'Use dark appearance (clear for light)').GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState -ne [System.Windows.Automation.ToggleState]::Off) { throw 'Theme preference did not survive restart.' }
+    Invoke-Button 'Brainiac Edge'
+    $edgeWindow=Wait-Window 'Brainiac Edge workspace'
+    $edgeSearch=$edgeWindow.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,'Search pinned content'))
+    $edgeSearch.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue('Edge process restart')
+    $restoredPin=$null
+    for($attempt=0;$attempt -lt 30;$attempt++) {
+        $restoredPin=$edgeWindow.FindFirst([System.Windows.Automation.TreeScope]::Descendants,[System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::NameProperty,'Edge process restart integration fixture'))
+        if($restoredPin) { break }
+        Start-Sleep -Milliseconds 100
+    }
+    if(!$restoredPin) { throw 'Edge pin did not survive a full process restart.' }
+    Invoke-EdgeControl $edgeWindow 'Hide'
+    Write-Output 'PASS: Edge pin survives a full process restart and is searchable through the real UI.'
     $window.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
     if(!$process.WaitForExit(10000)) { throw 'Restarted app did not close gracefully.' }
     Write-Output 'PASS: Full process restart restores preferences; graceful exit succeeds.'

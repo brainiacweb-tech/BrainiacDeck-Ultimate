@@ -7,6 +7,11 @@ internal static class Program
 {
     [STAThread] private static void Main(string[] args)
     {
+        if (args.Contains("--fresh-install-tests")) { FreshInstallTests.Run(); return; }
+        if (args.Contains("--store-review")) { StoreReview.Run(); return; }
+        if (args.Contains("--navigation-tests")) { NavigationTests.Run(); return; }
+        if (args.Contains("--design-tests")) { RedesignTests.Run(); return; }
+        if (args.Contains("--edge-tests")) { EdgeWindowsTests.Run(); return; }
         if (args.Contains("--teleprompter-tests")) { TeleprompterTests.Run(); return; }
         if (args.Contains("--visual-review")) { VisualReview.Run(); return; }
         var folder = Path.Combine(Path.GetTempPath(), "BrainiacDeskConversionTests", Guid.NewGuid().ToString("N")); Directory.CreateDirectory(folder);

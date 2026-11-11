@@ -17,7 +17,7 @@ public sealed class CaptureWindow : ToolWindow
     private readonly Stack<BitmapSource> undo = new(), redo = new();
     private readonly Canvas canvas = new() { Background = Brushes.Transparent };
     private readonly Image image = new();
-    private readonly System.Windows.Shapes.Rectangle selection = new() { Stroke = Brushes.Orange, StrokeThickness = 2, IsHitTestVisible = false, Visibility = Visibility.Collapsed };
+    private readonly System.Windows.Shapes.Rectangle selection = new() { Stroke = new SolidColorBrush(Color.FromRgb(8,124,250)), StrokeThickness = 2, IsHitTestVisible = false, Visibility = Visibility.Collapsed };
     private readonly ScrollViewer preview = new() { Height = 340, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     private readonly ComboBox source = new() { ItemsSource = new[] { "Primary display", "All displays", "Select region", "Foreground window" }, SelectedIndex = 0 };
     private readonly ComboBox delay = new() { ItemsSource = new[] { 1, 3, 5, 10 }, SelectedIndex = 1 };
@@ -40,7 +40,7 @@ public sealed class CaptureWindow : ToolWindow
     public CaptureWindow(ActionRouter router) : base("Screen Capture Studio")
     {
         lastVideo=OperationJournal.Load().FirstOrDefault(x=>x.Module == "Recording" && x.Outcome == "Completed" && File.Exists(x.Output))?.Output;
-        this.router = router; Width = 1180; MinWidth = 860;
+        this.router = router; Width = 1180; MinWidth = 640;
         Note("Desktop screenshots and local video, ready to edit and share.");
         var target = new WrapPanel(); target.Children.Add(Field("Capture source", source, 210)); target.Children.Add(Field("Countdown · seconds", delay, 145)); target.Children.Add(cursor); Body.Children.Add(target);
         var tabs = new TabControl { Margin = new Thickness(0,12,0,0) }; Body.Children.Add(tabs);
@@ -61,10 +61,12 @@ public sealed class CaptureWindow : ToolWindow
         Action("Reset to original", () => { if (original is not null && bitmap is not null) Commit(original); return Task.CompletedTask; },editActions);
         var export = Card(screenshots,"Export for sharing"); var exportOptions = new WrapPanel(); export.Children.Add(exportOptions); exportOptions.Children.Add(Field("Output size",preset,240)); exportOptions.Children.Add(Field("Framing",fit,215)); exportOptions.Children.Add(Field("JPEG quality",quality,145)); export.Children.Add(dimensions);
         var exportActions = new WrapPanel(); export.Children.Add(exportActions);
-        Action("Preview export", () => { new ImagePreviewWindow(ExportImage()) { Owner = this }.Show(); return Task.CompletedTask; },exportActions);
+        Action("Preview export", () => { new ImagePreviewWindow(ExportImage()) { Owner = DialogOwner }.Show(); return Task.CompletedTask; },exportActions);
         Action("Export PNG", () => SaveImageAsync(false),exportActions); Action("Export JPEG", () => SaveImageAsync(true),exportActions);
         Action("Copy image", () => { System.Windows.Clipboard.SetImage(ExportImage()); Status.Text = "Edited image copied at the selected export size."; return Task.CompletedTask; },exportActions);
         Action("Pin to Clipboard Shelf", () => { router.Shelf.AddImage(ExportImage()); return Task.CompletedTask; },exportActions);
+        Action("Pin to Brainiac Edge",async ()=> { await router.Edge.Content.PinImageAsync(ExportImage()); Status.Text="Pinned capture to Brainiac Edge."; },exportActions);
+        Action("OCR to Clipboard Shelf",async ()=> { var item=await router.Edge.Content.PinImageAsync(ExportImage()); await router.Edge.RecognizeAndShelfAsync(item,true); Status.Text="Capture pinned and recognized text sent through Shelf privacy filters."; },exportActions);
         Action("Export PDF", ExportPdfAsync,exportActions);
         var hint = new TextBlock { Text = "PNG preserves screenshot detail. Larger exports cannot restore detail missing from a small source; social platforms may recompress uploads.", TextWrapping = TextWrapping.Wrap, FontSize = 12, Margin = new Thickness(0,10,0,0) }; hint.SetResourceReference(TextBlock.ForegroundProperty,"Muted"); export.Children.Add(hint);
         void ToolOptions()
@@ -77,8 +79,8 @@ public sealed class CaptureWindow : ToolWindow
         var exports=new ScrollViewer { Content=exportBorder, VerticalScrollBarVisibility=ScrollBarVisibility.Auto }; Grid.SetColumn(exports,1); columns.Children.Add(exports); screenshots.Children.Add(columns);
         foreach(var field in exportOptions.Children.OfType<StackPanel>()) field.Width=220;
         foreach(var button in exportActions.Children.OfType<Button>()) { button.Padding=new Thickness(10,8,10,8); button.FontSize=12; }
-        void FitEditor() { preview.Height=Math.Clamp(ActualHeight-460,160,400); exports.Height=Math.Max(300,ActualHeight-310); }
-        SizeChanged += (_, _) => FitEditor(); Loaded += (_, _) => FitEditor();
+        void FitEditor() { var compact=LayoutWidth<1020; if(columns.RowDefinitions.Count==0) { columns.RowDefinitions.Add(new RowDefinition { Height=GridLength.Auto }); columns.RowDefinitions.Add(new RowDefinition { Height=GridLength.Auto }); } columns.ColumnDefinitions[1].Width=new GridLength(compact ? 0 : 290); Grid.SetColumn(exports,compact ? 0 : 1); Grid.SetRow(exports,compact ? 1 : 0); editorBorder.Margin=new Thickness(0,0,compact ? 0 : 16,0); preview.Height=Math.Clamp(LayoutHeight-460,160,400); exports.Height=Math.Max(300,LayoutHeight-310); }
+        WorkspaceSizeChanged += (_, _) => FitEditor(); SizeChanged += (_, _) => FitEditor(); Loaded += (_, _) => FitEditor();
         BuildRecording(recording);
         zoom.ValueChanged += (_, _) => { canvas.LayoutTransform = new ScaleTransform(zoom.Value/100,zoom.Value/100); selection.StrokeThickness=200/zoom.Value; };
         preset.SelectionChanged += (_, _) => UpdateDimensions(); fit.SelectionChanged += (_, _) => UpdateDimensions();
@@ -96,10 +98,11 @@ public sealed class CaptureWindow : ToolWindow
             }
             catch (Exception ex) { Status.Text = ex.Message; }
         };
-        AllowDrop = true; Drop += async (_, e) => { if (IsBusy || e.Data.GetData(DataFormats.FileDrop) is not string[] paths || paths.Length == 0) return; try { await LoadImageAsync(paths[0]); } catch(Exception ex) { Status.Text = ex.Message; } };
+        ((UIElement)Content).AllowDrop = true; ((UIElement)Content).Drop += async (_, e) => { if (IsBusy || e.Data.GetData(DataFormats.FileDrop) is not string[] paths || paths.Length == 0) return; try { await LoadImageAsync(paths[0]); } catch(Exception ex) { Status.Text = ex.Message; } };
     }
     private static StackPanel Field(string label, UIElement control, double width)
     {
+        Accessible(control,label);
         var panel = new StackPanel { Width = width, Margin = new Thickness(0,0,12,8) }; var text = new TextBlock { Text = label, FontSize = 12, Margin = new Thickness(0,0,0,7) }; text.SetResourceReference(TextBlock.ForegroundProperty,"Muted"); panel.Children.Add(text); panel.Children.Add(control); return panel;
     }
     private StackPanel Card(Panel parent, string title)
@@ -122,8 +125,8 @@ public sealed class CaptureWindow : ToolWindow
             try { await session.RunAsync(area.Value,path,outputPreset,fill,pointer,frameRate); lastVideo = path; OperationJournal.Record("Recording", "Desktop", path, "Completed"); Status.Text = $"Saved {session.Elapsed:hh\\:mm\\:ss} · {session.Frames} frames · {path}"; }
             finally { controller.Close(); }
         },actions); start.Style = (Style)FindResource("Primary");
-        Action("Edit last recording", () => { if (lastVideo is null) throw new InvalidOperationException("Record a clip first or open an MP4 below."); new VideoEditorWindow(lastVideo) { Owner = this }.Show(); return Task.CompletedTask; },actions);
-        Action("Open MP4 editor", () => { var paths = PickFiles("MP4 video|*.mp4"); if(paths.Length > 0) new VideoEditorWindow(paths[0]) { Owner = this }.Show(); return Task.CompletedTask; },actions);
+        Action("Edit last recording", () => { if (lastVideo is null) throw new InvalidOperationException("Record a clip first or open an MP4 below."); new VideoEditorWindow(lastVideo).OpenInWorkspace(); return Task.CompletedTask; },actions);
+        Action("Open MP4 editor", () => { var paths = PickFiles("MP4 video|*.mp4"); if(paths.Length > 0) new VideoEditorWindow(paths[0]).OpenInWorkspace(); return Task.CompletedTask; },actions);
     }
     private Drawing.Rectangle? ChooseArea(int mode) => mode switch { 0 => CaptureImaging.Primary, 1 => CaptureImaging.Desktop, 2 => ChooseRegion(), _ => CaptureImaging.Foreground() };
     private static Drawing.Rectangle? ChooseRegion() { var picker = new RegionSelectionWindow(); return picker.ShowDialog() == true ? picker.Selection : null; }
@@ -131,9 +134,11 @@ public sealed class CaptureWindow : ToolWindow
     {
         var mode = source.SelectedIndex; var wait = (int)delay.SelectedItem; var pointer = cursor.IsChecked == true;
         using (new CaptureVisibilityScope()) { await Task.Delay(TimeSpan.FromSeconds(wait)); var area = ChooseArea(mode); if (area is null) { Status.Text = "Capture cancelled."; return; } await Task.Delay(180); using var captured = CaptureImaging.Grab(area.Value,pointer); original = CaptureImaging.ToSource(captured); imageInput = null; undo.Clear(); redo.Clear(); SetImage(original); }
+        try { await router.Edge.ReceiveCaptureAsync(original!); } catch(Exception ex) { Status.Text="Capture ready; Edge pin failed: "+ex.Message; Activate(); return; }
         Activate(); Status.Text = $"Desktop capture ready · {bitmap!.PixelWidth} × {bitmap.PixelHeight} original pixels.";
     }
     private Task OpenImageAsync() { var paths = PickFiles("Images|*.png;*.jpg;*.jpeg;*.bmp"); return paths.Length == 0 ? Task.CompletedTask : LoadImageAsync(paths[0]); }
+    public Task OpenPinnedImageAsync(string path) => LoadImageAsync(path);
     private async Task LoadImageAsync(string path)
     {
         var loaded = await Task.Run(() => { using var stream = File.OpenRead(path); var frame = BitmapDecoder.Create(stream,BitmapCreateOptions.None,BitmapCacheOption.None).Frames[0]; if((long)frame.PixelWidth*frame.PixelHeight > 32_000_000) throw new InvalidDataException("Editor limit is 32 megapixels."); var copy = new WriteableBitmap(frame); copy.Freeze(); return copy; });

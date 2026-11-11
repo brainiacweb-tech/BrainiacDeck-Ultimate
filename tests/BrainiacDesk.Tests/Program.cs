@@ -20,6 +20,7 @@ try
     var failed = false;
     try { await new SettingsStore(Path.Combine(invalidPath, "settings.db")).LoadAsync(); } catch (IOException) { failed = true; }
     Check(failed, "Storage errors propagate without false success");
+    await EdgeTests.Run(path, Check);
     var a = Path.Combine(folder, "a.txt"); var b = Path.Combine(folder, "b.txt"); var c = Path.Combine(folder, "c.txt");
     await File.WriteAllTextAsync(a, "abc"); await File.WriteAllTextAsync(b, "abc"); await File.WriteAllTextAsync(c, "xyz");
     Check(await FileOperations.HashAsync(a) == "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD", "SHA-256 known vector");

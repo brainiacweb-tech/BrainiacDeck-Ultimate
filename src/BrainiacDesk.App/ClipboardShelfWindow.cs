@@ -32,7 +32,10 @@ public sealed class ClipboardShelfWindow : ToolWindow
     private const int Limit = 50;
     [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool AddClipboardFormatListener(IntPtr hwnd);
     [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
-    public ClipboardShelfWindow() : base("Clipboard Shelf")
+    private bool IsExcluded(string text) => exclusions.Text.Split(',',StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Any(word=>text.Contains(word,StringComparison.OrdinalIgnoreCase));
+    public ShelfItem? SelectedItem { get { var selected=list.SelectedItem as ShelfItem; if(selected is { Kind:"Text" } && IsExcluded(selected.Text)) throw new InvalidOperationException("The selected text is blocked by the current Shelf privacy filters."); return selected; } }
+    public void AddFiles(string[] paths) { if(paths.Any(path=>!System.IO.Path.Exists(path))) throw new System.IO.FileNotFoundException("A referenced file is missing."); Add(new("Files",string.Join("; ",paths),paths,DateTime.UtcNow)); }
+    public ClipboardShelfWindow(Func<ShelfItem,Task>? pinToEdge = null) : base("Clipboard Shelf")
     {
         Topmost = true; Width = 760; Height = 620; Top = 12;
         Note("Maximum 50 items; unpinned items expire after one hour. Persistence is off until you opt in. Closing always stops monitoring. Saved file items are references, not copies. Clipboard passwords cannot always be detected: pause monitoring before copying private content.");
@@ -52,6 +55,8 @@ public sealed class ClipboardShelfWindow : ToolWindow
         Action("Add clipboard once", () => { ReadClipboard(); return Task.CompletedTask; });
         var paste = new ComboBox { ItemsSource = new[] { "Original", "Uppercase", "Lowercase", "Title case", "Normalize whitespace" }, SelectedIndex = 0 }; Body.Children.Add(paste);
         Action("Copy selected", () => { if (list.SelectedItem is not ShelfItem item) throw new InvalidOperationException("Select a shelf item first."); ownWrite = true; try { if (item.Payload is BitmapSource bitmap) System.Windows.Clipboard.SetImage(bitmap); else if (item.Payload is string[] paths) { var collection = new StringCollection(); collection.AddRange(paths); System.Windows.Clipboard.SetFileDropList(collection); } else System.Windows.Clipboard.SetText(Transform(item.Text, (string)paste.SelectedItem)); } finally { Dispatcher.BeginInvoke(() => ownWrite = false, DispatcherPriority.ContextIdle); } return Task.CompletedTask; });
+        if(pinToEdge is not null) Note("Pinning an item to Brainiac Edge saves it across restarts in the local Edge collection.");
+        if(pinToEdge is not null) Action("Pin selected to Brainiac Edge",async ()=> { if(SelectedItem is not { } selected) throw new InvalidOperationException("Select an existing shelf item first."); await pinToEdge(selected); Status.Text="Pinned selected content to Edge."; });
         Action("Pin / unpin", () => { if (list.SelectedItem is not ShelfItem) throw new InvalidOperationException("Select an item first."); if (list.SelectedItem is ShelfItem item) { var i = items.IndexOf(item); items[i] = item with { Pinned = !item.Pinned }; } return Task.CompletedTask; });
         Action("Move selected up", () => { if (list.SelectedItem is ShelfItem item && items.IndexOf(item) > 0) items.Move(items.IndexOf(item), items.IndexOf(item) - 1); return Task.CompletedTask; });
         Action("Open text in teleprompter", () => { if (list.SelectedItem is not ShelfItem { Kind: "Text" } item) throw new InvalidOperationException("Select a text item first."); new TeleprompterWindow(item.Text).Show(); return Task.CompletedTask; });
@@ -59,13 +64,27 @@ public sealed class ClipboardShelfWindow : ToolWindow
         Action("Delete selected", () => { if (list.SelectedItem is not ShelfItem) throw new InvalidOperationException("Select an item first."); if (list.SelectedItem is ShelfItem item) items.Remove(item); return Task.CompletedTask; });
         Action("Clear shelf", () => { items.Clear(); Status.Text = persistenceError ?? "Shelf cleared; protected saved content was updated if persistence is enabled."; return Task.CompletedTask; });
         Action("Collapse / expand", () => { if (Height > 300) { MinHeight = 180; Height = 180; Body.Visibility = Visibility.Collapsed; Status.Text = "Right-click the window and choose Expand shelf."; } else { Body.Visibility = Visibility.Visible; MinHeight = 180; Height = 620; } return Task.CompletedTask; });
-        AllowDrop = true; Drop += (_, e) => { if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] paths) Add(new("Files", string.Join("; ", paths), paths, DateTime.UtcNow)); else if (e.Data.GetData(DataFormats.UnicodeText) is string text) AddSnippet(text); };
+        ((UIElement)Content).AllowDrop = true; ((UIElement)Content).Drop += (_, e) => { if (e.Data.GetDataPresent(DataFormats.FileDrop) && e.Data.GetData(DataFormats.FileDrop) is string[] paths) Add(new("Files", string.Join("; ", paths), paths, DateTime.UtcNow)); else if (e.Data.GetData(DataFormats.UnicodeText) is string text) AddSnippet(text); };
         SourceInitialized += (_, _) => { source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle); source.AddHook(Hook); };
         expiry.Tick += (_, _) => { foreach (var item in items.Where(x => !x.Pinned && DateTime.UtcNow - x.Created > TimeSpan.FromHours(1)).ToArray()) items.Remove(item); }; expiry.Start();
         Closed += (_, _) => { SetMonitoring(false); source?.RemoveHook(Hook); expiry.Stop(); closing = true; items.Clear(); };
+        Accessible(paste,"Clipboard text transformation"); Accessible(exclusions,"Excluded clipboard words"); Accessible(list,"Clipboard items");
+        ArrangeLayout(search,paste);
         Status.Text = items.Count == 0 ? "Shelf is empty. Add clipboard content or drop text/files to begin." : $"Restored {items.Count} protected shelf items. Monitoring is off.";
         // Double-click the title bar uses native maximize/restore, so collapsing remains recoverable through the context menu.
         var menu = new ContextMenu(); var expand = new MenuItem { Header = "Expand shelf" }; expand.Click += (_, _) => { Body.Visibility = Visibility.Visible; Height = 620; }; menu.Items.Add(expand); ContextMenu = menu;
+    }
+    private void ArrangeLayout(TextBox search,ComboBox paste)
+    {
+        var buttons=Body.Children.OfType<Button>().ToDictionary(x=>(string)x.Content); Body.Children.Clear();
+        Note("Your temporary collection. Add content once, or explicitly enable session monitoring below."); Body.Children.Add(monitor);
+        var top=new WrapPanel(); top.Children.Add(buttons["Add clipboard once"]); if(buttons.TryGetValue("Pin selected to Brainiac Edge",out var edge)) top.Children.Add(edge); Body.Children.Add(top);
+        search.ToolTip="Search your clipboard collection"; System.Windows.Automation.AutomationProperties.SetName(search,"Search shelf"); Body.Children.Add(search); list.Height=220; Body.Children.Add(list);
+        var copy=new WrapPanel { Margin=new Thickness(0,12,0,8) }; paste.Width=190; paste.Margin=new Thickness(0,4,12,4); copy.Children.Add(paste); copy.Children.Add(buttons["Copy selected"]); copy.Children.Add(buttons["Pin / unpin"]); copy.Children.Add(buttons["Move selected up"]); Body.Children.Add(copy);
+        var more=new WrapPanel(); foreach(var label in new[] { "Open text in teleprompter","Save text as TXT","Delete selected","Clear shelf","Collapse / expand" }) more.Children.Add(buttons[label]); Body.Children.Add(more);
+        var privacy=new StackPanel { Margin=new Thickness(8,12,8,8) }; privacy.Children.Add(persist); privacy.Children.Add(new TextBlock { Text="Exclude text containing these words",Margin=new Thickness(0,8,0,4) }); privacy.Children.Add(exclusions);
+        privacy.Children.Add(new TextBlock { Text="Unpinned items expire after one hour. Passwords cannot always be detected; pause monitoring before copying private content. Edge pins are explicitly persisted in its local collection.",TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,10,0,0) });
+        Body.Children.Add(new Expander { Header="Privacy & storage",Content=privacy,IsExpanded=false });
     }
     public static string Transform(string text, string mode) => mode switch { "Uppercase" => text.ToUpperInvariant(), "Lowercase" => text.ToLowerInvariant(), "Title case" => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(text.ToLower(CultureInfo.CurrentCulture)), "Normalize whitespace" => Regex.Replace(text, @"\s+", " ").Trim(), _ => text };
     public void AddImage(BitmapSource image) { if ((long)image.PixelWidth * image.PixelHeight > 8_000_000) throw new InvalidOperationException("Shelf images must be under 8 megapixels."); var clone = image.Clone(); clone.Freeze(); Add(new("Image", $"{image.PixelWidth} × {image.PixelHeight}", clone, DateTime.UtcNow)); }

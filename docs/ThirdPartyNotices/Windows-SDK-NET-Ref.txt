@@ -1,0 +1,11 @@
+Microsoft.Windows.SDK.NET.Ref 10.0.19041.57
+Copyright © Microsoft Corporation. All rights reserved.
+
+License terms: https://aka.ms/WinSDKLicenseURL
+Project: https://aka.ms/WinSDKProjectURL
+
+This Windows SDK targeting pack supplies the Windows platform projections used
+by Brainiac Edge offline OCR. The restored NuGet package declares the Windows
+SDK license URL, not an MIT license expression. Its redistribution terms and
+runtime projection notices must be included in the release license review.
+This file records package metadata; it does not replace Microsoft's terms.

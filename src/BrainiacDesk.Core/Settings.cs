@@ -1,7 +1,7 @@
 namespace BrainiacDesk.Core;
 public sealed record UserSettings
 {
-    public string Theme { get; init; } = "Dark";
+    public string Theme { get; init; } = "Light";
     public bool MinimizeToTray { get; init; } = true;
     public bool ConfirmExit { get; init; } = true;
     public bool OnboardingComplete { get; init; }

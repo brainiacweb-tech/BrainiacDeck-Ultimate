@@ -13,10 +13,11 @@ public partial class App : Application
     {
         base.OnStartup(e);
         var splashPanel = new System.Windows.Controls.StackPanel { Margin = new Thickness(32) };
-        splashPanel.Children.Add(new System.Windows.Controls.TextBlock { Text = "BrainiacDesk Ultimate", FontSize = 30, FontWeight = FontWeights.SemiBold });
+        splashPanel.Children.Add(new System.Windows.Controls.Image { Source=new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/BrainiacDesk.App;component/Brand/BrainiacDeck-logo.png")), Width=60, Height=60, HorizontalAlignment=HorizontalAlignment.Left,Margin=new Thickness(0,0,0,12) });
+        splashPanel.Children.Add(new System.Windows.Controls.TextBlock { Text = "BrainiacDeck Ultimate", FontFamily=(System.Windows.Media.FontFamily)FindResource("AppFont"), FontSize = 30, FontWeight = FontWeights.SemiBold });
         splashPanel.Children.Add(new System.Windows.Controls.TextBlock { Text = "One Desktop. Unlimited Possibilities.", Margin = new Thickness(0, 12, 0, 24) });
         splashPanel.Children.Add(new System.Windows.Controls.ProgressBar { IsIndeterminate = true, Height = 4 });
-        var splash = new Window { Title = "Initializing BrainiacDesk", Width = 510, Height = 220, WindowStyle = WindowStyle.None, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterScreen, Content = splashPanel };
+        var splash = new Window { Title = "Initializing BrainiacDeck", Width = 540, Height = 300, WindowStyle = WindowStyle.None, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterScreen, Content = splashPanel };
         splash.Show();
         await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Render);
         services = new ServiceCollection().AddLogging().AddSingleton<ISettingsStore>(_ => new SettingsStore(Path.Combine(LocalPaths.Data, "settings.db"))).AddSingleton<ShellViewModel>().AddSingleton<MainWindow>().BuildServiceProvider();

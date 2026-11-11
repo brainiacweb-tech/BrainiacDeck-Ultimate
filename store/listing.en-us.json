@@ -1,0 +1,33 @@
+{
+  "displayName": "BrainiacDeck Ultimate",
+  "language": "en-us",
+  "category": "Productivity",
+  "shortDescription": "A local Windows workspace for files, scripts, screenshots and pinned ideas.",
+  "description": "Bring your everyday tools into one native Windows workspace. Convert supported images, work with PDF pages, read scripts in a floating teleprompter, capture and annotate screenshots, record and edit silent MP4 clips, organize temporary clipboard snippets, and keep useful content in Brainiac Edge.\n\nOpen tools inside the main window. Use Command Center to find actions, Workspaces to save tool collections, and manual Workflows for repeatable file operations. Core processing works locally without a required account.",
+  "features": [
+    "Native Windows interface with light and dark themes",
+    "Image conversion, PDF assembly and page operations",
+    "Script library and configurable floating teleprompter",
+    "Screenshot annotations and offline OCR with installed Windows language support",
+    "Screen recording and basic silent MP4 editing",
+    "Brainiac Edge pinboard with tags, favourites, search and local backup",
+    "Clipboard Shelf with explicit monitoring consent and optional protected persistence",
+    "File hashes, reviewed renames, ZIP archives and duplicate scanning",
+    "Manual workflows and saved tool workspaces"
+  ],
+  "keywords": [
+    "productivity",
+    "teleprompter",
+    "clipboard",
+    "screenshot",
+    "PDF",
+    "converter",
+    "workspace"
+  ],
+  "releaseNotes": "Initial Store candidate. Includes integrated tool pages, floating reading and pinboard workspaces, offline file utilities, local privacy controls and light/dark themes. Release remains subject to package certification.",
+  "systemRequirements": "Windows 11 (build 22000 or later), x64. Offline OCR and voice-follow availability depend on installed Windows language components. Microphone permission is needed only for optional voice follow.",
+  "supportEmail": null,
+  "supportUrl": "https://github.com/brainiacweb-tech/BrainiacDeck-Ultimate/issues",
+  "privacyUrl": "https://github.com/brainiacweb-tech/BrainiacDeck-Ultimate/blob/main/PRIVACY.md",
+  "submissionStatus": "Assigned identity configured. Certification and installed-package lifecycle acceptance pending."
+}

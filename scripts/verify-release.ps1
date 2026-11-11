@@ -19,7 +19,7 @@ try {
  Run-Check 'release-build' @('build','BrainiacDesk.slnx','-c','Release')
  Run-Check 'core-checks' @('run','--project','tests/BrainiacDesk.Tests','-c','Release','--no-build')
  Run-Check 'windows-checks' @('run','--project','tests/BrainiacDesk.WindowsTests','-c','Release','--no-build')
- if($Interactive) { Run-Check 'overlay-ui-workflows' @('run','--project','tests/BrainiacDesk.WindowsTests','-c','Release','--no-build','--','--teleprompter-tests') }
+ if($Interactive) { Run-Check 'fresh-install' @('run','--project','tests/BrainiacDesk.WindowsTests','-c','Release','--no-build','--','--fresh-install-tests'); Run-Check 'store-ui-review' @('run','--project','tests/BrainiacDesk.WindowsTests','-c','Release','--no-build','--','--store-review'); Run-Check 'single-window-navigation' @('run','--project','tests/BrainiacDesk.WindowsTests','-c','Release','--no-build','--','--navigation-tests'); Run-Check 'redesign-ui-integration' @('run','--project','tests/BrainiacDesk.WindowsTests','-c','Release','--no-build','--','--design-tests'); Run-Check 'edge-ui-integration' @('run','--project','tests/BrainiacDesk.WindowsTests','-c','Release','--no-build','--','--edge-tests'); Run-Check 'overlay-ui-workflows' @('run','--project','tests/BrainiacDesk.WindowsTests','-c','Release','--no-build','--','--teleprompter-tests') }
  Run-Check 'vulnerability-audit' @('list','src/BrainiacDesk.App','package','--vulnerable','--include-transitive','--no-restore','--format','json')
  $raw=Get-Content (Join-Path $evidence 'vulnerability-audit.log') -Raw
  $audit=$raw.Substring($raw.IndexOf('{')) | ConvertFrom-Json

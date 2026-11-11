@@ -6,8 +6,9 @@ using System.Windows.Input;
 namespace BrainiacDesk.App;
 public sealed class ShortcutWindow : ToolWindow
 {
-    public ShortcutWindow(ShortcutService service) : base("Shortcut Studio")
+    public ShortcutWindow(ShortcutService service, EdgeCoordinator? edge = null) : base("Shortcut Studio")
     {
+        if(edge is not null) Action("Brainiac Edge shortcut settings",()=> { new EdgeSettingsWindow(edge).OpenInWorkspace(); return Task.CompletedTask; });
         Note("Command Center global shortcut: Ctrl + Shift + selected key. Registration can fail when another app owns the combination. Changes apply immediately and persist only after successful registration.");
         var saved = LocalConfiguration.Load("shortcut.json", new ShortcutPreference());
         var keys = new ComboBox { ItemsSource = new[] { "Space", "B", "D", "F8", "F9", "F10" }, SelectedItem = saved.Key }; Body.Children.Add(keys);

@@ -18,7 +18,7 @@ public sealed class RegionSelectionWindow : Window
         Left = bounds.Left; Top = bounds.Top; Width = Math.Max(1, bounds.Width); Height = Math.Max(1, bounds.Height);
         var canvas = new Canvas { Background = Brushes.Transparent, ClipToBounds = true };
         var root = new Grid(); root.Children.Add(new Image { Source = snapshot, Stretch = Stretch.Fill }); root.Children.Add(new Border { Background = new SolidColorBrush(Color.FromArgb(60,0,0,0)), IsHitTestVisible = false }); root.Children.Add(canvas);
-        var rectangle = new System.Windows.Shapes.Rectangle { Stroke = Brushes.Orange, StrokeThickness = 2, Fill = new SolidColorBrush(Color.FromArgb(20,255,255,255)), IsHitTestVisible = false }; canvas.Children.Add(rectangle);
+        var rectangle = new System.Windows.Shapes.Rectangle { Stroke = new SolidColorBrush(Color.FromRgb(8,124,250)), StrokeThickness = 2, Fill = new SolidColorBrush(Color.FromArgb(20,255,255,255)), IsHitTestVisible = false }; canvas.Children.Add(rectangle);
         var label = new TextBlock { Text = "Drag to select an area · Esc to cancel", Foreground = Brushes.White, Background = new SolidColorBrush(Color.FromRgb(16,24,39)), Padding = new Thickness(16), FontSize = 16, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(16), IsHitTestVisible = false }; root.Children.Add(label); Content = root;
         SourceInitialized += (_, _) => SetWindowPos(new WindowInteropHelper(this).Handle, new IntPtr(-1), bounds.X, bounds.Y, bounds.Width, bounds.Height, 0x0040);
         Point? start = null;

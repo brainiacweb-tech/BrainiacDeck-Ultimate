@@ -6,10 +6,14 @@ using System.Text.Json;
 using System.Windows;
 namespace BrainiacDesk.App;
 public sealed record DeskAction(string Id, string Title, string Keywords);
-public sealed class ActionRouter(Window owner)
+public sealed class ActionRouter(Window owner) : IDisposable
 {
-    public static readonly DeskAction[] Catalog = [new("convert", "Convert images or create PDF", "converter image png jpg resize compress"), new("shelf", "Open Clipboard Shelf", "snippets copy paste text"), new("prompt", "Start Teleprompter", "script presentation speech"), new("files", "Open File Toolkit", "rename zip archive checksum sha256 sha512 duplicates inspect"), new("workflow", "Open Workflow Studio", "automation batch sequence"), new("capture", "Capture screen", "screenshot annotate redact"), new("workspaces", "Open Workspaces", "workspace configuration"), new("privacy", "Open Privacy Center", "clear history data retention diagnostics")];
+    public static readonly DeskAction[] Catalog = [new("convert", "Convert images or create PDF", "converter image png jpg resize compress"), new("shelf", "Open Clipboard Shelf", "snippets copy paste text"), new("prompt", "Start Teleprompter", "script presentation speech"), new("files", "Open File Toolkit", "rename zip archive checksum sha256 sha512 duplicates inspect"), new("workflow", "Open Workflow Studio", "automation batch sequence"), new("capture", "Capture screen", "screenshot annotate redact"), new("workspaces", "Open Workspaces", "workspace configuration"), new("privacy", "Open Privacy Center", "clear history data retention diagnostics"), new("edge", "Open Brainiac Edge", "pinboard floating workspace pins"), new("edge-hide", "Hide Brainiac Edge", "tuck shelf"), new("edge-clipboard", "Pin clipboard item to Edge", "selected clipboard shelf"), new("edge-capture", "Pin latest screenshot to Edge", "capture image"), new("edge-search", "Search pinned content", "edge search OCR tags"), new("edge-expire", "Clear expired Edge items", "cleanup retention"), new("edge-settings", "Brainiac Edge settings", "shortcut docking monitor appearance backup")];
     private readonly Dictionary<string, Window> windows = [];
+    private EdgeCoordinator? edge;
+    public EdgeCoordinator Edge => edge ??=new EdgeCoordinator(owner,this);
+    public CaptureWindow Capture { get { Open("capture"); return (CaptureWindow)windows["capture"]; } }
+    public void Dispose() { edge?.Dispose(); CloseAll(); }
     public ClipboardShelfWindow Shelf { get { Open("shelf"); return (ClipboardShelfWindow)windows["shelf"]; } }
     public void Open(string id)
     {
@@ -18,14 +22,23 @@ public sealed class ActionRouter(Window owner)
     }
     private void OpenCore(string id)
     {
+        if(id=="prompt" && owner is MainWindow promptShell) { promptShell.OpenPromptWorkspace(); ActivityLog.Record("Opened prompt"); return; }
+        if(id.StartsWith("edge",StringComparison.Ordinal)) { _=RunEdgeAsync(id); return; }
         if (!Catalog.Any(x => x.Id == id)) throw new ArgumentException("Unknown action.");
         if (!windows.TryGetValue(id, out var window))
         {
-            window = id switch { "convert" => new ConverterWindow(), "shelf" => new ClipboardShelfWindow(), "prompt" => new TeleprompterWindow(), "files" => new FileToolsWindow(), "workflow" => new WorkflowWindow(), "capture" => new CaptureWindow(this), "workspaces" => new WorkspaceWindow(this), "privacy" => new PrivacyWindow(), _ => throw new ArgumentException("Unknown action.") };
+            window = id switch { "convert" => new ConverterWindow(), "shelf" => new ClipboardShelfWindow(item=>Edge.Content.PinShelfAsync(item)), "prompt" => new TeleprompterWindow(), "files" => new FileToolsWindow(), "workflow" => new WorkflowWindow(paths=>PinWorkflowAsync(paths),Edge), "capture" => new CaptureWindow(this), "workspaces" => new WorkspaceWindow(this), "privacy" => new PrivacyWindow(), _ => throw new ArgumentException("Unknown action.") };
             windows[id] = window; if (id != "prompt") window.Owner = owner; window.Closed += (_, _) => windows.Remove(id);
         }
+        if(window is ToolWindow tool && owner is MainWindow shell) { shell.ShowToolPage(tool); ActivityLog.Record("Opened " + id); return; }
         window.Show(); if (window.WindowState == WindowState.Minimized) window.WindowState = WindowState.Normal; if (id != "prompt") window.Activate();
         ActivityLog.Record("Opened " + id);
+    }
+    private async System.Threading.Tasks.Task PinWorkflowAsync(string[] paths) { foreach(var path in paths) await Edge.Content.PinFileAsync(path); }
+    private async System.Threading.Tasks.Task RunEdgeAsync(string id)
+    {
+        try { switch(id) { case "edge": Edge.Show(); break; case "edge-settings": new EdgeSettingsWindow(Edge).OpenInWorkspace(); break; case "edge-hide": Edge.Hide(); break; case "edge-search": Edge.Search(); break; case "edge-clipboard": await Edge.PinShelfSelectionAsync(); break; case "edge-capture": await Edge.PinLatestAsync(); break; case "edge-expire": await Edge.ClearExpiredAsync(); break; default: throw new ArgumentException("Unknown Edge command."); } }
+        catch(Exception ex) { Edge.Model.Status=ex.Message; MessageBox.Show(owner,ex.Message,"Brainiac Edge"); }
     }
     public void CloseAll() { foreach (var window in windows.Values.ToArray()) window.Close(); }
     public static int Score(DeskAction action, string query)

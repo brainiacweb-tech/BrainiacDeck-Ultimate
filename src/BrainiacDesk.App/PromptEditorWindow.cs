@@ -5,18 +5,19 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 namespace BrainiacDesk.App;
+public sealed record PromptColour(string Name,string Hex) { public override string ToString()=>Name; }
 public sealed class PromptEditorWindow : ToolWindow
 {
-    public PromptEditorWindow(TeleprompterWindow overlay,ScriptLibrary library,string text) : base("Teleprompter Scripts")
+    public PromptEditorWindow(TeleprompterWindow? overlay,ScriptLibrary library,string text,Action<string>? launchScript=null) : base("Teleprompter Scripts")
     {
         Width=840; Note("Write or paste a real script. Save to the protected local library to restore it next time, or import/export a text file. No scripts are created automatically.");
-        var search=Input(); search.ToolTip="Search saved scripts";
+        Note("Find a saved script"); var search=Input(); search.ToolTip="Search saved scripts"; Accessible(search,"Search saved scripts");
         var saved=new ListBox { Height=110,DisplayMemberPath="Name" }; Body.Children.Add(saved);
-        var name=Input(); name.ToolTip="Script name"; System.Windows.Automation.AutomationProperties.SetName(name,"Script name");
-        var editor=Input(text,240); editor.ToolTip="Script text"; System.Windows.Automation.AutomationProperties.SetName(editor,"Script text"); editor.AcceptsTab=true; editor.MaxLength=ScriptLibrary.MaximumCharacters;
+        Note("Script name"); var name=Input(); name.ToolTip="Script name"; System.Windows.Automation.AutomationProperties.SetName(name,"Script name");
+        Note("Your script"); var editor=Input(text,240); editor.ToolTip="Script text"; System.Windows.Automation.AutomationProperties.SetName(editor,"Script text"); editor.AcceptsTab=true; editor.MaxLength=ScriptLibrary.MaximumCharacters;
         bool dirty=false,loading=false; Guid? editingId=library.Active;
         void Refresh() { saved.ItemsSource=library.Scripts.Where(x=>x.Name.Contains(search.Text,StringComparison.OrdinalIgnoreCase)).OrderByDescending(x=>x.Updated).ToArray(); }
-        bool Discard()=>!dirty || MessageBox.Show(this,"Discard unsaved script edits?","Unsaved script",MessageBoxButton.YesNo)==MessageBoxResult.Yes;
+        bool Discard()=>!dirty || MessageBox.Show(DialogOwner,"Discard unsaved script edits?","Unsaved script",MessageBoxButton.YesNo)==MessageBoxResult.Yes;
         name.Text=library.Scripts.FirstOrDefault(x=>x.Id==editingId)?.Name ?? "";
         editor.TextChanged+=(_,_)=> { if(!loading) dirty=true; }; name.TextChanged+=(_,_)=> { if(!loading) dirty=true; };
         search.TextChanged+=(_,_)=>Refresh();
@@ -25,8 +26,8 @@ public sealed class PromptEditorWindow : ToolWindow
         Action("Import TXT / Markdown",async()=> { if(!Discard()) return; var paths=PickFiles("Scripts|*.txt;*.md"); if(paths.Length==0) return; if(new FileInfo(paths[0]).Length>2_000_000) throw new InvalidDataException("Script exceeds 2 MB."); var imported=await File.ReadAllTextAsync(paths[0]); if(imported.Length>ScriptLibrary.MaximumCharacters) throw new InvalidDataException("Script exceeds 250,000 characters."); editingId=null; name.Text=Path.GetFileNameWithoutExtension(paths[0]); editor.Text=imported; dirty=true; });
         Action("Save to script library",()=> { library.Select(editingId); var script=library.Save(name.Text,editor.Text); editingId=script.Id; dirty=false; Refresh(); Status.Text="Script saved using Windows account data protection."; return Task.CompletedTask; });
         Action("Export script TXT",async()=> { var path=SaveFile("Text|*.txt",".txt"); if(path is not null) { await File.WriteAllTextAsync(path,editor.Text); Status.Text="Text file exported. Save to library separately to restore it next launch."; } });
-        Action("Use script in overlay",()=> { overlay.SetScript(editor.Text); Status.Text="Script applied. Save to library to preserve changes after restart."; return Task.CompletedTask; });
-        Action("Delete selected script",()=> { if(saved.SelectedItem is not PromptScript script) throw new InvalidOperationException("Select a saved script first."); if(MessageBox.Show(this,"Delete this script from the local library? Exported files are retained.","Delete script",MessageBoxButton.YesNo)==MessageBoxResult.Yes) { library.Delete(script.Id); if(editingId==script.Id) editingId=null; Refresh(); } return Task.CompletedTask; });
+        Action("Use script in overlay",()=> { if(launchScript is not null) launchScript(editor.Text); else overlay!.SetScript(editor.Text); Status.Text="Script applied. Save to library to preserve changes after restart."; return Task.CompletedTask; });
+        Action("Delete selected script",()=> { if(saved.SelectedItem is not PromptScript script) throw new InvalidOperationException("Select a saved script first."); if(MessageBox.Show(DialogOwner,"Delete this script from the local library? Exported files are retained.","Delete script",MessageBoxButton.YesNo)==MessageBoxResult.Yes) { library.Delete(script.Id); if(editingId==script.Id) editingId=null; Refresh(); } return Task.CompletedTask; });
         Closing+=(_,e)=> { if(!e.Cancel && !Discard()) e.Cancel=true; }; Refresh();
     }
 }
@@ -45,6 +46,13 @@ public sealed class PromptSettingsWindow : ToolWindow
         Option("Reading width",250,1200,initial.ReadingWidth,value=>preferences=preferences with { ReadingWidth=value });
         Option("Scroll speed · pixels/second",5,180,initial.Speed,value=>preferences=preferences with { Speed=value });
         var mirror=new CheckBox { Content="Mirror script text",IsChecked=initial.Mirror }; Body.Children.Add(mirror); mirror.Click+=(_,_)=> { preferences=preferences with { Mirror=mirror.IsChecked==true }; apply(preferences); };
+        var flip=new CheckBox { Content="Flip text vertically",IsChecked=initial.FlipVertical }; Body.Children.Add(flip); flip.Click+=(_,_)=> { preferences=preferences with { FlipVertical=flip.IsChecked==true }; apply(preferences); };
+        var guide=new CheckBox { Content="Show reading guide",IsChecked=initial.ReadingGuide }; Body.Children.Add(guide); guide.Click+=(_,_)=> { preferences=preferences with { ReadingGuide=guide.IsChecked==true }; apply(preferences); };
+        Option("Reading guide position",.1,.9,initial.GuidePosition,value=>preferences=preferences with { GuidePosition=value });
+        Note("Text alignment"); var align=new ComboBox { ItemsSource=new[] { "Left","Center","Right","Justify" },SelectedItem=initial.Alignment }; Body.Children.Add(align); align.SelectionChanged+=(_,_)=> { preferences=preferences with { Alignment=(string)align.SelectedItem }; apply(preferences); };
+        Note("Reading text colour"); var textColour=new ComboBox { ItemsSource=new[] { new PromptColour("Soft white","#F5F8FF"),new PromptColour("Sky","#DCEEFF"),new PromptColour("Warm paper","#F9E9BD"),new PromptColour("Ink","#111827") },DisplayMemberPath="Name",SelectedValuePath="Hex",SelectedValue=initial.TextColor }; Body.Children.Add(textColour); textColour.SelectionChanged+=(_,_)=> { preferences=preferences with { TextColor=(string)textColour.SelectedValue }; apply(preferences); };
+        Note("Reading background colour"); var backgroundColour=new ComboBox { ItemsSource=new[] { new PromptColour("Midnight","#101B38"),new PromptColour("Black","#000000"),new PromptColour("Forest","#172D2C"),new PromptColour("Paper","#FFFFFF") },DisplayMemberPath="Name",SelectedValuePath="Hex",SelectedValue=initial.BackgroundColor }; Body.Children.Add(backgroundColour); backgroundColour.SelectionChanged+=(_,_)=> { preferences=preferences with { BackgroundColor=(string)backgroundColour.SelectedValue }; apply(preferences); };
+        Action("Full screen / restore",()=> { overlay.ToggleFullscreen(); return Task.CompletedTask; });
         var capture=new CheckBox { Content="Request Windows capture exclusion",IsChecked=initial.ExcludeCapture }; Body.Children.Add(capture); capture.Click+=(_,_)=> { preferences=preferences with { ExcludeCapture=capture.IsChecked==true }; apply(preferences); };
         Note("Capture exclusion is a Windows request. It cannot be guaranteed in Teams, Zoom, Meet, screen sharing, or recording applications. Test it before sharing sensitive scripts.");
         var monitors=new ComboBox { ItemsSource=System.Windows.Forms.Screen.AllScreens.Select(x=>x.DeviceName).ToArray(),SelectedItem=initial.Monitor }; Body.Children.Add(monitors);

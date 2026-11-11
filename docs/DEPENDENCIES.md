@@ -12,3 +12,9 @@ Vortice.MediaFoundation 3.8.3 (MIT; upstream commit 9e609cb9439c9872aa1b339f177e
 
 ## Offline speech and protected content
 System.Speech 10.0.0 (Microsoft, MIT) calls the installed local Windows speech recognizer. Windows account protection comes from the Windows Desktop runtime's ProtectedData API; no extra ProtectedData package is necessary. DEPENDENCY-INVENTORY.json records all restored direct/transitive package versions, declared licenses and repository revisions. This inventory is evidence for redistribution review, not a legal approval.
+
+## Brainiac Edge
+Tack was studied at revision 973f4446c910f9b354444771205ac4588db41084. No Tack source/assets/identity/updater code was copied. Its complete MIT notice is nevertheless distributed as ThirdPartyNotices/Tack-LICENSE.txt. Edge uses platform Windows.Media.Ocr through the Windows SDK .NET projection; the Windows target is net10.0-windows10.0.19041.0 while the product/package remains Windows 11, WPF and .NET 10. Existing output directories remain stable. No OCR executable or external AI service is bundled. SDK projection redistribution notices must be included in the release dependency review.
+
+## 2026 interface typography and brand assets
+The supplied BrainiacDeck logo is retained unchanged at assets/BrainiacDeck-logo.png. The repeatable generate-assets.ps1 pipeline derives PNG/ICO sizes from it for application, tray and package surfaces without changing application identity. Inter is bundled from the official Google Fonts ofl/inter source for offline body/control text; its SIL Open Font License is retained in Fonts/Inter-OFL.txt and copied to published output. Existing Raleway fonts remain the heading family. The hero illustration is original native WPF vector geometry, with no runtime image-generation or remote asset dependency.

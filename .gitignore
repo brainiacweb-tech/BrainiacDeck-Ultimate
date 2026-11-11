@@ -5,3 +5,16 @@ artifacts/
 scripts/dotnet-install.ps1
 *.user
 *.pfx
+*.p12
+
+.vscode/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.protected.json
+*.p12
+*.key
+.env
+.env.*

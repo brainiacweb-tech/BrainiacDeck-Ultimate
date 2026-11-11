@@ -18,7 +18,7 @@ public sealed class CommandWindow : ToolWindow
         void Execute() { if (list.SelectedItem is DeskAction action) { router.Open(action.Id); Dispatcher.BeginInvoke(() => Close()); } }
         search.TextChanged += (_, _) => Refresh();
         search.PreviewKeyDown += (_, e) => { if (e.Key == Key.Down) { list.SelectedIndex = Math.Min(list.Items.Count - 1, list.SelectedIndex + 1); e.Handled = true; } else if (e.Key == Key.Up) { list.SelectedIndex = Math.Max(0, list.SelectedIndex - 1); e.Handled = true; } };
-        PreviewKeyDown += (_, e) => { if (e.Key == Key.Enter) { Execute(); e.Handled = true; } else if (e.Key == Key.Escape) Close(); };
+        ((System.Windows.UIElement)Content).PreviewKeyDown += (_, e) => { if (e.Key == Key.Enter) { Execute(); e.Handled = true; } else if (e.Key == Key.Escape) Close(); };
         list.MouseDoubleClick += (_, _) => Execute();
         Action("Run selected action", () => { Execute(); return Task.CompletedTask; });
         Action("Favorite / unfavorite", () => { if (list.SelectedItem is DeskAction action) { if (!favorites.Remove(action.Id)) favorites.Add(action.Id); LocalConfiguration.Save("favorites.json", favorites); Refresh(); } return Task.CompletedTask; });

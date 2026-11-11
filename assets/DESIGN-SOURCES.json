@@ -2,5 +2,18 @@
   "iconLicense": "ISC (including retained upstream notices)",
   "fontSource": "https://github.com/google/fonts/tree/799331018b4fe67a33f1d001d09304b612864568/ofl/raleway",
   "iconSource": "https://github.com/lucide-icons/lucide/tree/3fef7aca71a50acc54bd2f24f0cc4747c22aa6d2/icons",
-  "fontLicense": "SIL Open Font License 1.1"
+  "fontLicense": "SIL Open Font License 1.1",
+  "bodyFont": {
+    "family": "Inter",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/inter/Inter%5Bopsz,wght%5D.ttf",
+    "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+    "license": "SIL Open Font License 1.1",
+    "notice": "src/BrainiacDesk.App/Fonts/Inter-OFL.txt"
+  },
+  "brandLogo": {
+    "source": "User-supplied BrainiacDeck Ultimate App Logo.png",
+    "file": "assets/BrainiacDeck-logo.png",
+    "sha256": "dfb96b4dda84ba88a14dad74c0749f4783d11f349fca0661d80ea6eb57d1ce97"
+  },
+  "heroIllustration": "Original WPF vector composition in Design/WorkspaceIllustration.xaml"
 }

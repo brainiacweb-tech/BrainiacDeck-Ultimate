@@ -23,7 +23,7 @@ public sealed class ConverterWindow : ToolWindow
         Note("Drop files or choose inputs. GIF/TIFF conversion exports the first frame only. JPEG transparency becomes white. Markdown exports source text, without rich layout.");
         files.CollectionChanged += (_, _) => RefreshFormats();
         list = new ListBox { ItemsSource = files, Height = 150 }; Body.Children.Add(list);
-        AllowDrop = true; Drop += (_, e) => { if (cancellation is null && e.Data.GetData(DataFormats.FileDrop) is string[] paths) AddInputs(paths); };
+        ((UIElement)Content).AllowDrop = true; ((UIElement)Content).Drop += (_, e) => { if (cancellation is null && e.Data.GetData(DataFormats.FileDrop) is string[] paths) AddInputs(paths); };
         Action("Add files", () => { if (cancellation is null) AddInputs(PickFiles("Supported inputs|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.gif;*.txt;*.md;*.pdf")); return Task.CompletedTask; });
         Action("Remove selected", () => { if (cancellation is null && list.SelectedItem is string selected) files.Remove(selected); return Task.CompletedTask; });
         var previewImage = new System.Windows.Controls.Image { Height = 120, Stretch = System.Windows.Media.Stretch.Uniform };
@@ -51,12 +51,13 @@ public sealed class ConverterWindow : ToolWindow
         Action("View PDF metadata", async () => { var paths = PickFiles("PDF|*.pdf"); if (paths.Length > 0) Status.Text = await Task.Run(() => PdfPages.Metadata(paths[0])); });
         results.Text = string.Join(Environment.NewLine, OperationJournal.Load().Where(x => x.Module == "Converter").Select(x => $"{x.Time:u} · {x.Outcome} · {x.Input} → {x.Output} · {x.Bytes:N0} bytes"));
         System.Windows.Automation.AutomationProperties.SetName(folder,"Output folder"); System.Windows.Automation.AutomationProperties.SetName(width,"Maximum image width"); System.Windows.Automation.AutomationProperties.SetName(format,"Output format");
+        Accessible(quality,"JPEG quality"); Accessible(results,"Conversion results"); Accessible(list,"Conversion input files");
         DesignLayout(previewImage, pages);
         Closing += (_, e) => { if (cancellation is not null) { cancellation.Cancel(); e.Cancel = true; Status.Text = "Cancelling. Close again after the current operation stops."; } };
     }
     private void DesignLayout(System.Windows.Controls.Image preview, TextBox pages)
     {
-        Width = 1180; Height = 900; MinWidth = 1040;
+        Width = 1180; Height = 900; MinWidth = 680;
         var buttons = Body.Children.OfType<Button>().ToDictionary(button => (string)button.Content);
         var introduction = Body.Children.OfType<TextBlock>().First();
         Body.Children.Clear();
@@ -70,6 +71,13 @@ public sealed class ConverterWindow : ToolWindow
         introduction.Margin = new Thickness(0, 0, 0, 20); introduction.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); Body.Children.Add(introduction);
         var columns = new Grid(); columns.ColumnDefinitions.Add(new ColumnDefinition()); columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(330) }); Body.Children.Add(columns);
         var left = new StackPanel { Margin = new Thickness(0, 0, 20, 0) }; var right = new StackPanel(); Grid.SetColumn(right, 1); columns.Children.Add(left); columns.Children.Add(right);
+        void Responsive()
+        {
+            var compact=LayoutWidth<1000; columns.ColumnDefinitions[1].Width=compact ? new GridLength(0) : new GridLength(330);
+            if(columns.RowDefinitions.Count==0) { columns.RowDefinitions.Add(new RowDefinition { Height=GridLength.Auto }); columns.RowDefinitions.Add(new RowDefinition { Height=GridLength.Auto }); }
+            Grid.SetColumn(right,compact ? 0 : 1); Grid.SetRow(right,compact ? 1 : 0); left.Margin=new Thickness(0,0,compact ? 0 : 20,0);
+        }
+        WorkspaceSizeChanged+=(_,_)=>Responsive(); SizeChanged+=(_,_)=>Responsive(); Loaded+=(_,_)=>Responsive();
         var queue = Card(left, "01  Add your files");
         var drop = new Border { BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(14), Margin = new Thickness(0, 0, 0, 14) }; drop.SetResourceReference(Border.BorderBrushProperty, "Accent");
         var dropText = new StackPanel(); dropText.Children.Add(new TextBlock { Text = "Drop files here", FontSize = 19, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center }); var detail = new TextBlock { Text = "Images, PDFs, TXT or Markdown", FontSize = 12, Margin = new Thickness(0, 8, 0, 0), HorizontalAlignment = HorizontalAlignment.Center }; detail.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); dropText.Children.Add(detail); drop.Child = dropText; queue.Children.Add(drop);

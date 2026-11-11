@@ -23,7 +23,7 @@ public static class ProtectedLocalData
         finally { CryptographicOperations.ZeroMemory(bytes); }
     }
 }
-public sealed record PromptPreferences(double Width=640,double Height=220,double X=0,double Y=0,bool HasPosition=false,string Monitor="",double FontSize=26,double Opacity=.96,double ReadingWidth=580,double Speed=30,bool ExcludeCapture=false,bool Mirror=false);
+public sealed record PromptPreferences(double Width=640,double Height=220,double X=0,double Y=0,bool HasPosition=false,string Monitor="",double FontSize=26,double Opacity=.96,double ReadingWidth=580,double Speed=30,bool ExcludeCapture=false,bool Mirror=false,string Alignment="Left",string TextColor="#F5F8FF",string BackgroundColor="#101B38",bool ReadingGuide=false,bool FlipVertical=false,double GuidePosition=.5);
 public sealed record PromptScript(Guid Id,string Name,string Text,DateTimeOffset Updated);
 public sealed record PromptLibrary(PromptScript[] Scripts,Guid? Active);
 public sealed class ScriptLibrary

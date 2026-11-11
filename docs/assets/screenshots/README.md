@@ -1,0 +1,1 @@
+Screenshots of actual application views, rendered from a clean isolated profile by `--store-review`. No user content or fabricated activity was inserted. The dashboard starts empty. Captured on Windows 11 at the display pixel density; these images are not mockups.

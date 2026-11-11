@@ -30,6 +30,12 @@ public sealed class TeleprompterWindow : Window
     private int speechCursor;
     private readonly System.Collections.Generic.List<int> hotkeys=[];
     private Window? editorWindow,settingsWindow;
+    private Border? readingSurface;
+    private readonly System.Windows.Shapes.Rectangle readingGuide=new() { Height=2,IsHitTestVisible=false,Margin=new Thickness(20,0,20,0),VerticalAlignment=VerticalAlignment.Top };
+    private bool fullscreen;
+    private NativeRect restoredBounds;
+    private double restoredWidth,restoredHeight;
+    public bool IsFullscreen=>fullscreen;
     public bool Playing=>playing;
     public string ScriptText=>reading.Text;
     public double ScrollOffset=>reading.VerticalOffset;
@@ -41,23 +47,27 @@ public sealed class TeleprompterWindow : Window
     [DllImport("user32.dll")] private static extern bool SetWindowDisplayAffinity(IntPtr h,uint affinity);
     [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr h,out NativeRect rect);
     [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left,Top,Right,Bottom; }
-    public TeleprompterWindow(string text="")
+    public TeleprompterWindow(string text="",Guid? scriptId=null)
     {
+        if(scriptId is not null) library.Select(scriptId);
         preferences=LocalConfiguration.Load("teleprompter.json",new PromptPreferences());
-        FontFamily=(FontFamily)Application.Current.FindResource("AppFont");
+        FontFamily=(FontFamily)Application.Current.FindResource("BodyFont");
         Title="Floating Teleprompter · BrainiacDesk"; Width=Valid(preferences.Width,400,1200,640); Height=Valid(preferences.Height,140,650,220); MinWidth=400; MinHeight=140; MaxWidth=1400; MaxHeight=800;
         WindowStyle=WindowStyle.None; ResizeMode=ResizeMode.NoResize; AllowsTransparency=true; Background=Brushes.Transparent; Topmost=true; ShowInTaskbar=false; ShowActivated=false;
-        var shell=new Border { CornerRadius=new CornerRadius(28),Background=new SolidColorBrush(Color.FromRgb(10,17,29)),BorderBrush=new SolidColorBrush(Color.FromRgb(53,67,86)),BorderThickness=new Thickness(1) };
+        var shell=new Border { CornerRadius=new CornerRadius(24),BorderThickness=new Thickness(1) }; readingSurface=shell; shell.SetResourceReference(Border.BorderBrushProperty,"Edge");
         var layout=new Grid(); foreach(var height in new[] { GridLength.Auto,new GridLength(1,GridUnitType.Star),GridLength.Auto,GridLength.Auto }) layout.RowDefinitions.Add(new RowDefinition { Height=height }); shell.Child=layout; Content=shell;
         var header=new DockPanel { Margin=new Thickness(18,5,12,0),Background=Brushes.Transparent,LastChildFill=true };
         var controls=new WrapPanel { HorizontalAlignment=HorizontalAlignment.Right }; DockPanel.SetDock(controls,Dock.Right); header.Children.Add(controls);
         AddButton(controls,"Edit script","Icon.Nav.Prompt",OpenEditor); play=AddButton(controls,"Play or pause","Icon.Nav.Play",TogglePlayback); AddButton(controls,"Settings","Icon.Nav.Settings",OpenSettings); AddButton(controls,"Close teleprompter","Icon.Nav.Cancel",Close);
-        var grip=new TextBlock { Text="BRAINIACDESK  ·  PROMPTER",FontSize=9,Foreground=Brushes.LightGray,VerticalAlignment=VerticalAlignment.Center,Padding=new Thickness(0,8,0,8),Cursor=Cursors.SizeAll };
+        var grip=new TextBlock { Text="BRAINIACDECK  /  PROMPTER",FontSize=9,Foreground=Brushes.LightGray,VerticalAlignment=VerticalAlignment.Center,Padding=new Thickness(0,8,0,8),Cursor=Cursors.SizeAll };
         grip.MouseLeftButtonDown+=(_,e)=> { if(e.ClickCount==2) Snap(); else { try { DragMove(); SnapNearTop(); } catch(InvalidOperationException) { } } }; header.Children.Add(grip); layout.Children.Add(header);
-        Grid.SetRow(reading,1); layout.Children.Add(reading); Grid.SetRow(status,2); layout.Children.Add(status); Grid.SetRow(extras,3); layout.Children.Add(extras);
-        AddButton(extras,"Restart script","Icon.Nav.Prompt",Restart); AddButton(extras,"Snap beneath webcam","Icon.Nav.Arrow",Snap); AddButton(extras,"Slower","Icon.Nav.Settings",()=>SetSpeed(preferences.Speed-5)); AddButton(extras,"Faster","Icon.Nav.Settings",()=>SetSpeed(preferences.Speed+5));
+        Grid.SetRow(reading,1); layout.Children.Add(reading); Grid.SetRow(readingGuide,1); readingGuide.SetResourceReference(System.Windows.Shapes.Shape.FillProperty,"Accent"); layout.Children.Add(readingGuide); Grid.SetRow(status,2); layout.Children.Add(status); Grid.SetRow(extras,3); layout.Children.Add(extras);
+        AddButton(extras,"Full screen / restore","Icon.Nav.Dashboard",ToggleFullscreen); AddButton(extras,"Smaller text","Icon.Nav.Settings",()=>SetFontSize(preferences.FontSize-2)); AddButton(extras,"Larger text","Icon.Nav.Settings",()=>SetFontSize(preferences.FontSize+2)); AddButton(extras,"Restart script","Icon.Nav.Prompt",Restart); AddButton(extras,"Snap beneath webcam","Icon.Nav.Arrow",Snap); AddButton(extras,"Slower","Icon.Nav.Settings",()=>SetSpeed(preferences.Speed-5)); AddButton(extras,"Faster","Icon.Nav.Settings",()=>SetSpeed(preferences.Speed+5));
         var resize=new Thumb { Width=18,Height=18,HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Bottom,Cursor=Cursors.SizeNWSE,Opacity=.5 }; resize.Template=(ControlTemplate)System.Windows.Markup.XamlReader.Parse("<ControlTemplate xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\" TargetType=\"Thumb\"><Border Background=\"Transparent\"><TextBlock Text=\"⋰\" Foreground=\"#AAB6C5\" FontSize=\"16\"/></Border></ControlTemplate>"); Grid.SetRowSpan(resize,4); layout.Children.Add(resize); resize.DragDelta+=(_,e)=> { Width=Math.Clamp(ActualWidth+e.HorizontalChange,MinWidth,MaxWidth); Height=Math.Clamp(ActualHeight+e.VerticalChange,MinHeight,MaxHeight); };
-        MouseEnter+=(_,_)=>extras.Visibility=Visibility.Visible; MouseLeave+=(_,_)=>extras.Visibility=Visibility.Collapsed;
+        MouseEnter+=(_,_)=>extras.Visibility=Visibility.Visible; MouseLeave+=(_,_)=> { if(!IsKeyboardFocusWithin) extras.Visibility=Visibility.Collapsed; };
+        IsKeyboardFocusWithinChanged+=(_,_)=> { if(IsKeyboardFocusWithin) extras.Visibility=Visibility.Visible; };
+        PreviewKeyDown+=(_,e)=> { if(e.Key==Key.F11) { ToggleFullscreen(); e.Handled=true; } else if(e.Key==Key.Escape && fullscreen) { ToggleFullscreen(); e.Handled=true; } else if(e.Key==Key.Space) { TogglePlayback(); e.Handled=true; } };
+        reading.SizeChanged+=(_,_)=>UpdateGuide();
         ApplyPreferences(); var active=library.Scripts.FirstOrDefault(x=>x.Id==library.Active); SetScript(text.Length>0 ? text : active?.Text ?? "");
         timer.Tick+=(_,_)=>Tick(); saveTimer.Tick+=(_,_)=> { saveTimer.Stop(); SavePreferences(); };
         SizeChanged+=(_,_)=>QueueSave(); LocationChanged+=(_,_)=>QueueSave();
@@ -70,7 +80,7 @@ public sealed class TeleprompterWindow : Window
     private Button AddButton(Panel parent,string label,string icon,Action action)
     {
         var image=new Image { Width=15,Height=15 }; image.Source=PromptIcon(label,icon);
-        var button=new Button { Content=image,ToolTip=label,Width=32,Height=28,Padding=new Thickness(4),Margin=new Thickness(2),Focusable=false,Background=Brushes.Transparent,Foreground=Brushes.White };
+        var button=new Button { Content=image,ToolTip=label,Width=34,Height=32,Padding=new Thickness(4),Margin=new Thickness(2),Focusable=true,Background=Brushes.Transparent,Foreground=Brushes.White };
         button.Template=(ControlTemplate)System.Windows.Markup.XamlReader.Parse("<ControlTemplate xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\" TargetType=\"Button\"><Border x:Name=\"surface\" xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\" CornerRadius=\"8\" Background=\"{TemplateBinding Background}\"><ContentPresenter HorizontalAlignment=\"Center\" VerticalAlignment=\"Center\"/></Border><ControlTemplate.Triggers><Trigger Property=\"IsMouseOver\" Value=\"True\"><Setter TargetName=\"surface\" Property=\"Background\" Value=\"#29384D\"/></Trigger></ControlTemplate.Triggers></ControlTemplate>");
         System.Windows.Automation.AutomationProperties.SetName(button,label); button.Click+=(_,_)=> { try { action(); } catch(Exception ex) { status.Text=ex.Message; } }; parent.Children.Add(button); return button;
     }
@@ -85,7 +95,7 @@ public sealed class TeleprompterWindow : Window
         source=HwndSource.FromHwnd(new WindowInteropHelper(this).Handle); source.AddHook(Hook);
         SetWindowLongPtr(source.Handle,-20,new IntPtr(GetWindowLongPtr(source.Handle,-20).ToInt64()|0x08000000L|0x80L));
         var conflicts=new System.Collections.Generic.List<string>();
-        foreach(var pair in new[] { (8101,Key.P,"Ctrl+Alt+P"),(8102,Key.R,"Ctrl+Alt+R"),(8103,Key.X,"Ctrl+Alt+X") })
+        foreach(var pair in new[] { (8101,Key.P,"Ctrl+Alt+P"),(8102,Key.R,"Ctrl+Alt+R"),(8103,Key.X,"Ctrl+Alt+X"),(8104,Key.F,"Ctrl+Alt+F") })
         { if(RegisterHotKey(source.Handle,pair.Item1,0x4003,(uint)KeyInterop.VirtualKeyFromKey(pair.Item2))) hotkeys.Add(pair.Item1); else conflicts.Add(pair.Item3); }
         status.Text=conflicts.Count>0 ? "Shortcut unavailable: "+string.Join(", ",conflicts)+". Use the controls." : "Ctrl+Alt+P play/pause  ·  R restart  ·  X dismiss";
         RequestExclusion();
@@ -93,7 +103,7 @@ public sealed class TeleprompterWindow : Window
     private IntPtr Hook(IntPtr h,int message,IntPtr w,IntPtr l,ref bool handled)
     {
         if(message==0x21) { handled=true; return new IntPtr(3); } // WM_MOUSEACTIVATE / MA_NOACTIVATE
-        if(message==0x312) { if(w.ToInt32()==8101) TogglePlayback(); else if(w.ToInt32()==8102) Restart(); else if(w.ToInt32()==8103) Close(); else return IntPtr.Zero; handled=true; }
+        if(message==0x312) { if(w.ToInt32()==8101) TogglePlayback(); else if(w.ToInt32()==8102) Restart(); else if(w.ToInt32()==8103) Close(); else if(w.ToInt32()==8104) ToggleFullscreen(); else return IntPtr.Zero; handled=true; }
         return IntPtr.Zero;
     }
     public void SetScript(string text)
@@ -116,16 +126,35 @@ public sealed class TeleprompterWindow : Window
         if(playing) { var maximum=Math.Max(0,reading.ExtentHeight-reading.ViewportHeight); reading.ScrollToVerticalOffset(PromptEngine.Advance(reading.VerticalOffset,now-last,preferences.Speed,maximum)); if(reading.VerticalOffset>=maximum) { playing=false; timer.Stop(); UpdatePlay(); status.Text=maximum>0 ? "End of script · Restart to read again" : "Script fits in the panel · expand or adjust font size"; } }
         last=now;
     }
+    private void SetFontSize(double value) { preferences=preferences with { FontSize=Math.Clamp(value,16,64) }; ApplyPreferences(); QueueSave(); }
+    public void ToggleFullscreen()
+    {
+        if(source is null) return;
+        if(!fullscreen)
+        {
+            GetWindowRect(source.Handle,out restoredBounds); restoredWidth=Width; restoredHeight=Height; fullscreen=true; MaxWidth=double.PositiveInfinity; MaxHeight=double.PositiveInfinity;
+            var screen=Forms.Screen.FromHandle(source.Handle).Bounds; SetWindowPos(source.Handle,new IntPtr(-1),screen.Left,screen.Top,screen.Width,screen.Height,0x10);
+        }
+        else
+        {
+            fullscreen=false; MaxWidth=1400; MaxHeight=800; Width=restoredWidth; Height=restoredHeight;
+            SetWindowPos(source.Handle,new IntPtr(-1),restoredBounds.Left,restoredBounds.Top,restoredBounds.Right-restoredBounds.Left,restoredBounds.Bottom-restoredBounds.Top,0x10); QueueSave();
+        }
+    }
     private void SetSpeed(double value) { preferences=preferences with { Speed=Math.Clamp(value,5,180) }; status.Text=$"Scroll speed · {preferences.Speed:0} px/s"; QueueSave(); }
     private void ApplyPreferences()
     {
         preferences=preferences with { FontSize=Valid(preferences.FontSize,16,64,26),Speed=Valid(preferences.Speed,5,180,30),Opacity=Valid(preferences.Opacity,.35,1,.96),ReadingWidth=Valid(preferences.ReadingWidth,250,1200,580) };
-        Opacity=preferences.Opacity; reading.FontSize=preferences.FontSize; reading.MaxWidth=preferences.ReadingWidth; reading.HorizontalAlignment=HorizontalAlignment.Center; reading.LayoutTransform=preferences.Mirror ? new ScaleTransform(-1,1) : Transform.Identity;
+        Opacity=preferences.Opacity; reading.FontSize=preferences.FontSize; reading.MaxWidth=preferences.ReadingWidth; reading.HorizontalAlignment=HorizontalAlignment.Center; reading.LayoutTransform=new ScaleTransform(preferences.Mirror ? -1 : 1,preferences.FlipVertical ? -1 : 1);
+        reading.TextAlignment=Enum.TryParse<TextAlignment>(preferences.Alignment,out var alignment) ? alignment : TextAlignment.Left;
+        try { reading.Foreground=new SolidColorBrush((Color)ColorConverter.ConvertFromString(preferences.TextColor)); readingSurface!.Background=new SolidColorBrush((Color)ColorConverter.ConvertFromString(preferences.BackgroundColor)); } catch(FormatException) { reading.Foreground=Brushes.White; readingSurface!.Background=new SolidColorBrush(Color.FromRgb(16,27,56)); }
+        readingGuide.Visibility=preferences.ReadingGuide ? Visibility.Visible : Visibility.Collapsed; UpdateGuide();
     }
+    private void UpdateGuide() { readingGuide.Margin=new Thickness(20,Math.Max(0,reading.ActualHeight*Valid(preferences.GuidePosition,.1,.9,.5)),20,0); }
     private void QueueSave() { if(!ready) return; saveTimer.Stop(); saveTimer.Start(); }
     private void SavePreferences()
     {
-        if(source is null) return;
+        if(source is null || fullscreen) return;
         try { if(!GetWindowRect(source.Handle,out var rect)) return; preferences=preferences with { Width=Width,Height=Height,X=rect.Left,Y=rect.Top,HasPosition=true,Monitor=Forms.Screen.FromHandle(source.Handle).DeviceName }; LocalConfiguration.Save("teleprompter.json",preferences); }
         catch(Exception ex) { status.Text="Could not save teleprompter settings: "+ex.Message; }
     }

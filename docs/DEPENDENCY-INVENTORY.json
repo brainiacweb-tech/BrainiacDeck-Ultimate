@@ -145,5 +145,14 @@
     "copyright": "Copyright (c) Amer Koleci and Contributors",
     "repository": "https://github.com/amerkoleci/Vortice.Windows",
     "commit": "9e609cb9439c9872aa1b339f177e40ec96f77239"
+  },
+  {
+    "package": "Microsoft.Windows.SDK.NET.Ref/10.0.19041.57",
+    "license": "Windows SDK license",
+    "licenseUrl": "https://aka.ms/WinSDKLicenseURL",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "repository": "https://aka.ms/WinSDKProjectURL",
+    "commit": null,
+    "role": "Windows platform targeting pack and WinRT projections for offline OCR"
   }
 ]
