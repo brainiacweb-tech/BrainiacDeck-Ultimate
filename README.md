@@ -14,7 +14,7 @@ A native Windows workspace for presenting, capturing, organizing and working wit
 [![Build](https://github.com/brainiacweb-tech/BrainiacDeck-Ultimate/actions/workflows/windows.yml/badge.svg)](https://github.com/brainiacweb-tech/BrainiacDeck-Ultimate/actions/workflows/windows.yml)
 [![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**[Feature tour](#feature-tour)** · **[Build & run](#build-from-source)** · **[Help](docs/HELP.md)** · **[Privacy](PRIVACY.md)** · **[Report an issue](https://github.com/brainiacweb-tech/BrainiacDeck-Ultimate/issues)**
+**[Download preview](https://github.com/brainiacweb-tech/BrainiacDeck-Ultimate/releases/tag/v0.2.0-preview.1)** · **[Feature tour](#feature-tour)** · **[Build & run](#build-from-source)** · **[Help](docs/HELP.md)** · **[Privacy](PRIVACY.md)** · **[Report an issue](https://github.com/brainiacweb-tech/BrainiacDeck-Ultimate/issues)**
 
 <img src="docs/assets/screenshots/light-dashboard.png" alt="The real BrainiacDeck Ultimate dashboard in light mode with an empty local workspace" width="100%">
 
@@ -91,7 +91,9 @@ Choose your appearance in **Settings** and save preferences. Tool pages share th
 
 **Requirements:** Windows 11, x64. Source builds need the .NET 10 SDK. Self-contained published builds include their runtime.
 
-Build locally using the instructions below. Successful GitHub Actions runs provide a development-build artifact on the [Actions page](https://github.com/brainiacweb-tech/BrainiacDeck-Ultimate/actions). Artifacts are development candidates, not signed installers or certified Store releases.
+Download the [Windows x64 preview](https://github.com/brainiacweb-tech/BrainiacDeck-Ultimate/releases/tag/v0.2.0-preview.1), choose the **portable ZIP**, extract the complete folder and run `BrainiacDesk.App.exe`. The preview is unsigned. The separately attached **UNSIGNED MSIX** is for package/submission review and is not a signed consumer installer.
+
+You can also build locally using the instructions below. Successful GitHub Actions runs provide development-build artifacts on the [Actions page](https://github.com/brainiacweb-tech/BrainiacDeck-Ultimate/actions). Neither a GitHub preview nor an Actions artifact implies Microsoft Store certification.
 
 Keep a published application's entire folder together, then launch `BrainiacDesk.App.exe`. The internal executable and namespaces retain their existing `BrainiacDesk` names for compatibility; the visible product is BrainiacDeck Ultimate.
 
